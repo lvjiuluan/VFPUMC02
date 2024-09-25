@@ -1,3 +1,6 @@
 n_estimators: 1
-n_iter: 5
+n_iter: 500
 theta: 0.04
+theta_P: 0.04
+theta_N: 0.001
+num_p_in_hidden: None

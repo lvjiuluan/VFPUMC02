@@ -1,21 +1,71 @@
 import os
-from sklearn.semi_supervised import LabelSpreading, LabelPropagation, SelfTrainingClassifier
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, recall_score, roc_auc_score, f1_score
-from sklearn.model_selection import train_test_split
+
 import pandas as pd
+from sklearn.metrics import accuracy_score, recall_score, roc_auc_score, f1_score
 import numpy as np
 import yaml
-
 from consts.Constants import CONFITS_PATH
-from datasets.DataSet import DataSet
-from enums.HideRatio import HideRatio
+
+
+def subtract_from_row(df: pd.DataFrame, row_no: int, diff: float) -> pd.DataFrame:
+    """
+    将指定行的每个值减去 diff，并返回修改后的 DataFrame。
+
+    参数:
+    - df: 需要操作的 DataFrame。
+    - row_no: 需要操作的行号（从 0 开始）。
+    - diff: 需要从该行的每个值中减去的数值。
+
+    返回:
+    - 修改后的 DataFrame。
+    """
+    # 检查行号是否在 DataFrame 的范围内
+    if row_no < 0 or row_no >= len(df):
+        raise IndexError("行号超出 DataFrame 的范围")
+
+    # 将指定行的每个值减去 diff
+    df.loc[row_no] = df.loc[row_no] - diff
+
+    return df
+
+
+def value_counts_for_labels(*ys):
+    """
+    统计多个标签数组中每个标签值的出现次数。
+
+    参数:
+    *ys: 可变数量的标签数组（np.ndarray），每个数组代表一个标签集合。
+
+    返回:
+    None: 直接打印每个标签数组中不同值的出现次数。
+    """
+    for idx, y in enumerate(ys):
+        print(f"标签数组 {idx + 1}:")
+        # 使用 np.unique 统计不同值的个数
+        unique_values, counts = np.unique(y, return_counts=True)
+
+        # 打印结果
+        for value, count in zip(unique_values, counts):
+            print(f"  值 {value} 出现了 {count} 次")
+        print()  # 每个数组之间空一行
 
 
 def evaluate_model(y_true, y_pred, y_prob):
     """
     评估模型的准确率、召回率、AUC 和 F1 分数。
     如果输入包含 NaN 值，则将其替换为 0。
+
+    参数:
+    y_true (np.ndarray): 真实标签的数组，通常是二分类问题中的 0 或 1。
+    y_pred (np.ndarray): 模型预测的标签数组，通常是二分类问题中的 0 或 1。
+    y_prob (np.ndarray): 模型预测的概率数组，表示每个样本属于正类（1）的概率。
+
+    返回:
+    tuple: 包含以下四个评估指标的元组：
+        - accuracy (float): 准确率，表示预测正确的样本占总样本的比例。
+        - recall (float): 召回率，表示在所有正类样本中被正确预测为正类的比例。
+        - auc (float): AUC（ROC 曲线下面积），表示模型区分正负类的能力。
+        - f1 (float): F1 分数，精确率和召回率的调和平均数。
     """
     y_true = np.nan_to_num(y_true, nan=0)
     y_pred = np.nan_to_num(y_pred, nan=0)
@@ -29,103 +79,6 @@ def evaluate_model(y_true, y_pred, y_prob):
     return accuracy, recall, auc, f1
 
 
-def semi_supervised_evaluation(dataset):
-    """
-    对传入的 dataset 进行半监督学习评估，使用 Label Spreading、Label Propagation 和 Self-training 方法。
-    结果存储在一个 DataFrame 中，行标签为 HideRatio 的成员名，列标签为方法和评估指标的组合。
-
-    参数:
-    - dataset: 包含 df, hidden_y 和 y 属性的对象。
-
-    返回:
-    - results_df: 包含评估结果的 DataFrame。
-    """
-    assert isinstance(dataset, DataSet), "dataset 必须是 DataSet 类或其子类的实例"
-    # 创建一个空的 DataFrame，用于存储结果
-    methods = ['Label Spreading', 'Label Propagation', 'Self-training']
-    metrics = ['Accuracy', 'Recall', 'AUC', 'F1']
-    index = pd.MultiIndex.from_product([methods, metrics], names=['Method', 'Metric'])
-    results_df = pd.DataFrame(columns=index)
-
-    # 遍历 HideRatio 枚举类
-    for member in HideRatio:
-        print(f"当前的 member 为 {member.name}")
-
-        # 获取隐藏标签
-        dataset.get_hidden_labels(member)
-
-        # 提取数据
-        X = dataset.df
-        hidden_y = dataset.hidden_y
-        y_true = dataset.y
-
-        # 找到未标记样本的索引
-        unlabeled_mask = hidden_y == -1
-
-        # 找到已标记样本的索引
-        labeled_mask = hidden_y != -1
-
-        # 只对未标记样本进行预测，因此我们需要对这些样本的预测结果进行评估
-        X_unlabeled = X[unlabeled_mask]
-        y_true_unlabeled = y_true[unlabeled_mask]  # 用于评估的真实标签
-
-        # 对数据进行拆分，用于 Label Propagation 和 Self-training
-        X_small, _, hidden_y_small, _ = train_test_split(X, hidden_y, test_size=0.9, random_state=42)
-
-        # 1. Label Spreading
-        label_spread = LabelSpreading(kernel='knn', n_neighbors=5)
-        label_spread.fit(X, hidden_y)
-
-        # 对未标记样本进行预测
-        y_pred_spread = label_spread.predict(X_unlabeled)
-        y_prob_spread = label_spread.predict_proba(X_unlabeled)[:, 1]
-
-        # 评估 Label Spreading
-        accuracy_spread, recall_spread, auc_spread, f1_spread = evaluate_model(y_true_unlabeled, y_pred_spread,
-                                                                               y_prob_spread)
-
-        # 2. Label Propagation
-        label_prop = LabelPropagation(kernel='rbf', gamma=20)
-        label_prop.fit(X_small, hidden_y_small)
-
-        # 对未标记样本进行预测
-        y_pred_prop = label_prop.predict(X_unlabeled)
-        y_prob_prop = label_prop.predict_proba(X_unlabeled)[:, 1]
-
-        # 评估 Label Propagation
-        accuracy_prop, recall_prop, auc_prop, f1_prop = evaluate_model(y_true_unlabeled, y_pred_prop, y_prob_prop)
-
-        # 3. Self-training
-        svc = SVC(probability=True)
-        self_training_model = SelfTrainingClassifier(base_estimator=svc, threshold=0.5)
-        self_training_model.fit(X_small, hidden_y_small)
-
-        # 对未标记样本进行预测
-        y_pred_self_train = self_training_model.predict(X_unlabeled)
-        y_prob_self_train = self_training_model.predict_proba(X_unlabeled)[:, 1]
-
-        # 评估 Self-training
-        accuracy_self_train, recall_self_train, auc_self_train, f1_self_train = evaluate_model(y_true_unlabeled,
-                                                                                               y_pred_self_train,
-                                                                                               y_prob_self_train)
-
-        # 将结果存储到 DataFrame 中
-        results_df.loc[member.name, ('Label Spreading', 'Accuracy')] = accuracy_spread
-        results_df.loc[member.name, ('Label Spreading', 'Recall')] = recall_spread
-        results_df.loc[member.name, ('Label Spreading', 'AUC')] = auc_spread
-        results_df.loc[member.name, ('Label Spreading', 'F1')] = f1_spread
-
-        results_df.loc[member.name, ('Label Propagation', 'Accuracy')] = accuracy_prop
-        results_df.loc[member.name, ('Label Propagation', 'Recall')] = recall_prop
-        results_df.loc[member.name, ('Label Propagation', 'AUC')] = auc_prop
-        results_df.loc[member.name, ('Label Propagation', 'F1')] = f1_prop
-
-        results_df.loc[member.name, ('Self-training', 'Accuracy')] = accuracy_self_train
-        results_df.loc[member.name, ('Self-training', 'Recall')] = recall_self_train
-        results_df.loc[member.name, ('Self-training', 'AUC')] = auc_self_train
-        results_df.loc[member.name, ('Self-training', 'F1')] = f1_self_train
-
-    return results_df
 
 
 
