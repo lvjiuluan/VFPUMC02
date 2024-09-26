@@ -7,6 +7,88 @@ import yaml
 from consts.Constants import CONFITS_PATH
 
 
+def normalize_columns(data_parm):
+    data = data_parm.copy()
+    # 遍历每一列
+    for i in range(data.shape[1]):
+        col = data[:, i]
+        
+        # 检查是否有值超出 [0, 1] 范围
+        if np.any(col > 1) or np.any(col < 0):
+            # 归一化该列到 [0, 1]
+            col_min = np.min(col)
+            col_max = np.max(col)
+            
+            # 避免除以零的情况
+            if col_max != col_min:
+                col = (col - col_min) / (col_max - col_min)
+            else:
+                col = np.zeros_like(col)  # 如果列中所有值相同，归一化为 0
+            
+            # 缩放到 [0.0, 0.1]
+            col = col * 0.1
+            
+            # 更新列数据
+            data[:, i] = col
+    
+    return data
+
+def expand_to_image_shape(data):
+    a, b = data.shape  # 获取输入数据的形状
+    target_shape = (32, 32, 3)  # 目标形状
+    target_size = np.prod(target_shape)  # 计算目标形状的元素总数 32*32*3 = 3072
+    
+    # 如果 b 小于 3072，我们需要扩展数据
+    if b < target_size:
+        # 重复填充数据以达到目标大小
+        expanded_data = np.tile(data, (1, (target_size // b) + 1))  # 重复填充
+        expanded_data = expanded_data[:, :target_size]  # 截断到目标大小
+    else:
+        # 如果 b 大于或等于 3072，直接截断数据
+        expanded_data = data[:, :target_size]
+    
+    # 将数据 reshape 成 (a, 32, 32, 3)
+    reshaped_data = expanded_data.reshape(a, *target_shape)
+    
+    return reshaped_data
+
+
+def nearest_multiple(num: float, k: int) -> int:
+    if k == 0:
+        raise ValueError("k 不能为 0")
+    
+    # 将 num 四舍五入到最近的 k 的倍数
+    rounded_multiple = round(num / k) * k
+    
+    return rounded_multiple
+
+
+def nearest_even(num: float) -> int:
+    # 将 float 四舍五入为最近的整数
+    rounded_num = round(num)
+    
+    # 如果是偶数，直接返回
+    if rounded_num % 2 == 0:
+        return rounded_num
+    else:
+        # 如果是奇数，返回最近的偶数
+        # 奇数比偶数大1或小1，因此可以通过减1或加1得到最近的偶数
+        if rounded_num > num:
+            return rounded_num - 1
+        else:
+            return rounded_num + 1
+
+
+def expand_and_repeat(data):
+    # Step 1: 扩展维度，将 (a, b) 变为 (a, b, 1)
+    expanded_data = np.expand_dims(data, axis=-1)
+    
+    # Step 2: 沿着最后一个维度重复三次，得到 (a, b, 1, 3)
+    repeated_data = np.repeat(expanded_data, 3, axis=-1)
+    
+    return repeated_data.reshape(data.shape[0],data.shape[1],1,3)
+
+
 def subtract_from_row(df: pd.DataFrame, row_no: int, diff: float) -> pd.DataFrame:
     """
     将指定行的每个值减去 diff，并返回修改后的 DataFrame。
