@@ -8,3 +8,5 @@ DATASETS_PATH = os.path.join(ROOT_PATH,"datasets")
 
 
 CONFITS_PATH = os.path.join(ROOT_PATH,"configs")
+
+TOTAL_COUNT = 5000
