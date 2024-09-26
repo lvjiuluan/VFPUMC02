@@ -51,44 +51,47 @@ def run_experiments(algorithms, datasets, yaml_data, initConfig):
 
     # 遍历算法、数据集和隐藏比例
     for algorithm in algorithms:
-        baseConfig = yaml_data[algorithm]
-        baseConfig.update(initConfig)
-        for dataset in datasets:
-            for member in HideRatio:
-                # 设置配置
-                baseConfig['algorithm'] = algorithm
-                baseConfig['num_labels'] = nearest_even(TOTAL_COUNT * member.value)
-                baseConfig['ulb_num_labels'] = nearest_even(len(dataset.df) * (1 - member.value))
+        try:
+            baseConfig = yaml_data[algorithm]
+            baseConfig.update(initConfig)
+            for dataset in datasets:
+                for member in HideRatio:
+                    # 设置配置
+                    baseConfig['algorithm'] = algorithm
+                    baseConfig['num_labels'] = nearest_even(TOTAL_COUNT * member.value)
+                    baseConfig['ulb_num_labels'] = nearest_even(len(dataset.df) * (1 - member.value))
 
-                # 打印日志：记录当前正在运行的算法、数据集和隐藏比例
-                logging.info(f"正在运行实验 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}")
-                logging.info(f"配置详情 - 有标签样本数: {baseConfig['num_labels']},无标签样本数: {baseConfig['ulb_num_labels']},一共{baseConfig['num_labels']+ baseConfig['num_labels']}")
+                    # 打印日志：记录当前正在运行的算法、数据集和隐藏比例
+                    logging.info(f"正在运行实验 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}")
+                    logging.info(f"配置详情 - 有标签样本数: {baseConfig['num_labels']},无标签样本数: {baseConfig['ulb_num_labels']},一共{baseConfig['num_labels']+ baseConfig['num_labels']}")
 
-                # 获取配置
-                config = get_config(baseConfig)
+                    # 获取配置
+                    config = get_config(baseConfig)
 
-                # 打印日志：记录训练开始时间
-                start_time = datetime.now()
-                logging.info(f"训练开始 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}, 开始时间: {start_time}")
+                    # 打印日志：记录训练开始时间
+                    start_time = datetime.now()
+                    logging.info(f"训练开始 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}, 开始时间: {start_time}")
 
-                # 训练并获取评估结果
-                result = train_and_get_eval(dataset, config)
+                    # 训练并获取评估结果
+                    result = train_and_get_eval(dataset, config)
 
-                # 打印日志：记录训练结束时间
-                end_time = datetime.now()
-                logging.info(f"训练结束 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}, 结束时间: {end_time}")
-                logging.info(f"训练时长: {end_time - start_time}")
+                    # 打印日志：记录训练结束时间
+                    end_time = datetime.now()
+                    logging.info(f"训练结束 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}, 结束时间: {end_time}")
+                    logging.info(f"训练时长: {end_time - start_time}")
 
-                # 将结果存储在字典中，使用 (algorithm, dataset.baseFileName, member.name) 作为键
-                if algorithm not in results:
-                    results[algorithm] = {}
-                if dataset.baseFileName not in results[algorithm]:
-                    results[algorithm][dataset.baseFileName] = {}
+                    # 将结果存储在字典中，使用 (algorithm, dataset.baseFileName, member.name) 作为键
+                    if algorithm not in results:
+                        results[algorithm] = {}
+                    if dataset.baseFileName not in results[algorithm]:
+                        results[algorithm][dataset.baseFileName] = {}
 
-                results[algorithm][dataset.baseFileName][member.name] = result
+                    results[algorithm][dataset.baseFileName][member.name] = result
 
-                # 打印日志：记录结果存储的键值信息
-                logging.info(f"结果已存储 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}")
+                    # 打印日志：记录结果存储的键值信息
+                    logging.info(f"结果已存储 - 算法: {algorithm}, 数据集: {dataset.baseFileName}, 隐藏比例: {member.name}")
+        except Exception as e:
+            logging.info(f"{algorithm}训练失败，失败原因 = {e}")
 
     # 将结果字典转换为 DataFrame
     # 这里使用 pandas 的多级索引功能
