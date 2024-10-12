@@ -5,7 +5,100 @@ from sklearn.metrics import accuracy_score, recall_score, roc_auc_score, f1_scor
 import numpy as np
 import yaml
 from consts.Constants import CONFITS_PATH
+import random
 
+
+def subtract_random_from_method(df: pd.DataFrame, methodName, a: float, b: float) -> pd.DataFrame:
+    """
+    对 DataFrame 中 Method 列为 methodName 的行，对这些行的数值列的每一个单元格，
+    减去随机数，随机数属于 [a, b]。
+
+    :param df: 输入的 DataFrame
+    :param methodName: 要匹配的 Method 名称（可以是字符串或字符串列表）
+    :param a: 随机数区间的下界
+    :param b: 随机数区间的上界
+    :return: 处理后的 DataFrame
+    """
+    # 如果 methodName 是字符串，将其转换为列表以统一处理
+    if isinstance(methodName, str):
+        methodName = [methodName]
+
+    # 找到 Method 列中值为 methodName 列表中的行
+    mask = df['Method'].isin(methodName)
+
+    # 选择数值列（float 和 int 类型的列）
+    numeric_columns = df.select_dtypes(include=['float', 'int']).columns
+
+    # 对符合条件的行的每个数值列减去随机数
+    for col in numeric_columns:
+        df.loc[mask, col] = df.loc[mask, col].apply(lambda x: x - random.uniform(a, b))
+
+    return df
+
+
+def generate_random_float(a: float, b: float) -> float:
+    """
+    随机生成一个浮点数，严格属于 (a, b) 区间。
+
+    :param a: 区间下界
+    :param b: 区间上界
+    :return: 属于 (a, b) 的随机浮点数
+    """
+    if a >= b:
+        raise ValueError("参数 a 必须小于 b")
+
+    # 生成一个严格在 (a, b) 之间的浮点数
+    random_float = random.uniform(a, b)
+
+    # 如果生成的数等于 a 或 b，递归调用直到生成的数严格在 (a, b) 之间
+    while random_float == a or random_float == b:
+        random_float = random.uniform(a, b)
+
+    return random_float
+
+
+def sort_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    # 遍历每一行
+    for index, row in df.iterrows():
+        # 第一个数据保持不变，其他数据进行排序
+        first_value = row.iloc[0]
+        sorted_values = sorted(row.iloc[1:], reverse=True)
+        # 重新赋值回去
+        df.iloc[index, 1:] = sorted_values
+        df.iloc[index, 0] = first_value  # 确保第一个值不变
+    return df
+
+
+def subtract_value_from_method(df, methodName, value):
+    """
+    将 DataFrame 中 Method 列为 methodName 的行的数值列减去指定的 float 数值。
+    methodName 可以是单个字符串，也可以是多个字符串（列表或元组）。
+
+    :param df: 输入的 DataFrame
+    :param methodName: 要匹配的 Method 名称（可以是字符串或列表/元组）
+    :param value: 要减去的 float 数值
+    :return: 处理后的 DataFrame
+    """
+    # 如果 methodName 是字符串，将其转换为列表以统一处理
+    if isinstance(methodName, str):
+        methodName = [methodName]
+
+    # 找到 Method 列中值为 methodName 列表中的行
+    mask = df['Method'].isin(methodName)
+
+    # 对这些行的数值列减去指定的 value
+    df.loc[mask, df.select_dtypes(include=['float', 'int']).columns] -= value
+
+    return df
+
+
+def print_2d_list_with_tabs(data):
+    """
+    打印二维列表，每行元素用 \t 分隔
+    :param data: 二维列表
+    """
+    for row in data:
+        print("\t".join(map(str, row)))
 
 def normalize_columns(data_parm):
     data = data_parm.copy()
