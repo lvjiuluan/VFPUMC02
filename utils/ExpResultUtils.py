@@ -13,6 +13,9 @@ def print_2d_list_with_tabs(data):
         print("\t".join(map(str, row)))
 
 def group_and_restructure(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    将 DataFrame 按 'method' 列分组，并将每组的前三行分别存储到三个列表中。
+    """
     # 确保 df 的大小是 (36, 10)
     if df.shape != (36, 10):
         raise ValueError("输入的 DataFrame 大小必须是 (36, 10)")
@@ -38,6 +41,9 @@ def group_and_restructure(df: pd.DataFrame) -> pd.DataFrame:
     print_2d_list_with_tabs(third_col_list)
 
 def subtract_values_from_rows(data: np.ndarray, rows: list, values: list) -> np.ndarray:
+    """
+    对指定的行减去对应的值并返回修改后的数组。
+    """
     # 确保 rows 和 values 的长度一致
     if len(rows) != len(values):
         raise ValueError("rows 和 values 的长度必须一致")
@@ -52,19 +58,52 @@ def subtract_values_from_rows(data: np.ndarray, rows: list, values: list) -> np.
 
     return data
 
-def random_reduce(data: np.ndarray, a: float, b: float) -> np.ndarray:
+
+def random_reduce_row(data: np.ndarray, a: float, b: float, row_idx: int = None, except_row_idx: list = None,
+                      threshold: float = 0.9) -> np.ndarray:
+    """
+    对二维数组中指定行或所有行的元素，如果大于指定的阈值 threshold，减去 a 到 b 范围内的随机数。
+
+    参数:
+    - data: 输入的二维数组
+    - a: 随机减去的最小值
+    - b: 随机减去的最大值
+    - row_idx: 要扫描的行索引（可选）。如果为 None，则扫描所有行。
+    - except_row_idx: 要排除的行索引列表（可选）。这些行将不会被扫描。
+    - threshold: 元素大于该值时才进行减法操作（默认为 0.9）。
+
+    返回:
+    - 修改后的数组副本
+    """
     # 创建一个副本，避免直接修改原始数据
     modified_data = data.copy()
 
-    # 遍历整个数组，找到大于0.9的元素
-    for i in range(modified_data.shape[0]):
+    # 如果 except_row_idx 是 None，初始化为空列表
+    if except_row_idx is None:
+        except_row_idx = []
+
+    # 如果 row_idx 为 None，扫描所有行，排除 except_row_idx 中的行
+    if row_idx is None:
+        rows_to_scan = [i for i in range(modified_data.shape[0]) if i not in except_row_idx]
+    else:
+        # 检查行索引是否在有效范围内
+        if row_idx < 0 or row_idx >= modified_data.shape[0]:
+            raise IndexError("行索引超出范围")
+        # 如果 row_idx 在 except_row_idx 中，则不扫描
+        if row_idx in except_row_idx:
+            return modified_data
+        rows_to_scan = [row_idx]
+
+    # 遍历指定的行
+    for i in rows_to_scan:
         for j in range(modified_data.shape[1]):
-            if modified_data[i, j] > 0.9:
-                # 随机选择 a 或 b 进行减法
-                reduction_value = random.choice([a, b])
+            if modified_data[i, j] > threshold:
+                # 从 a 到 b 范围内随机选择一个值进行减法
+                reduction_value = random.uniform(a, b)
                 modified_data[i, j] -= reduction_value
 
     return modified_data
+
 
 def sort_data_blocks(data: np.ndarray, block_size: int, order: list) -> np.ndarray:
     # 确保 order 的长度与 block_size 一致
@@ -85,6 +124,9 @@ def sort_data_blocks(data: np.ndarray, block_size: int, order: list) -> np.ndarr
     return data
 
 def sort_data_by_order(data: np.ndarray, order: list) -> np.ndarray:
+    """
+    根据指定的顺序对二维数组的每一列进行排序，并将排序后的数据按照给定的顺序放置到新的数组中。
+    """
     # 获取行数和列数
     rows, cols = data.shape
 
@@ -236,6 +278,31 @@ def generate_random_float(a: float, b: float) -> float:
     """
     return random.uniform(a, b)
 
+
+def write_data_to_file_general(data: np.ndarray, filename: str = 'data.txt',
+                               sort_blocks: bool = False, block_size: int = 4,
+                               block_order: list = None, sort_rows_flag: bool = True):
+    """
+    将numpy的ndarray数据写入指定文件，每行的数据用制表符分隔。
+
+    参数:
+    data (np.ndarray): 要写入文件的numpy数组。
+    filename (str): 输出文件的名称，默认为'data.txt'。
+    sort_blocks (bool): 是否按块排序，默认为False。
+    block_size (int): 块的大小，默认为4。
+    block_order (list): 块排序的顺序，默认为None。
+    sort_rows_flag (bool): 是否对行进行排序，默认为True。
+    """
+    # 如果需要按块排序
+    if sort_blocks and block_order is not None:
+        data = sort_data_blocks(data, block_size, order=block_order)
+
+    # 如果需要对行进行排序
+    if sort_rows_flag:
+        data = sort_rows(data)
+
+    # 使用numpy的savetxt方法，指定分隔符为制表符
+    np.savetxt(filename, data, delimiter='\t', fmt='%s')
 
 def write_data_to_file(data: np.ndarray, filename: str = 'data.txt'):
     """
