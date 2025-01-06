@@ -100,37 +100,39 @@ def print_2d_list_with_tabs(data):
     for row in data:
         print("\t".join(map(str, row)))
 
+
 def normalize_columns(data_parm):
     data = data_parm.copy()
     # 遍历每一列
     for i in range(data.shape[1]):
         col = data[:, i]
-        
+
         # 检查是否有值超出 [0, 1] 范围
         if np.any(col > 1) or np.any(col < 0):
             # 归一化该列到 [0, 1]
             col_min = np.min(col)
             col_max = np.max(col)
-            
+
             # 避免除以零的情况
             if col_max != col_min:
                 col = (col - col_min) / (col_max - col_min)
             else:
                 col = np.zeros_like(col)  # 如果列中所有值相同，归一化为 0
-            
+
             # 缩放到 [0.0, 0.1]
             col = col * 0.1
-            
+
             # 更新列数据
             data[:, i] = col
-    
+
     return data
+
 
 def expand_to_image_shape(data):
     a, b = data.shape  # 获取输入数据的形状
     target_shape = (32, 32, 3)  # 目标形状
     target_size = np.prod(target_shape)  # 计算目标形状的元素总数 32*32*3 = 3072
-    
+
     # 如果 b 小于 3072，我们需要扩展数据
     if b < target_size:
         # 重复填充数据以达到目标大小
@@ -139,27 +141,27 @@ def expand_to_image_shape(data):
     else:
         # 如果 b 大于或等于 3072，直接截断数据
         expanded_data = data[:, :target_size]
-    
+
     # 将数据 reshape 成 (a, 32, 32, 3)
     reshaped_data = expanded_data.reshape(a, *target_shape)
-    
+
     return reshaped_data
 
 
 def nearest_multiple(num: float, k: int) -> int:
     if k == 0:
         raise ValueError("k 不能为 0")
-    
+
     # 将 num 四舍五入到最近的 k 的倍数
     rounded_multiple = round(num / k) * k
-    
+
     return rounded_multiple
 
 
 def nearest_even(num: float) -> int:
     # 将 float 四舍五入为最近的整数
     rounded_num = round(num)
-    
+
     # 如果是偶数，直接返回
     if rounded_num % 2 == 0:
         return rounded_num
@@ -175,11 +177,11 @@ def nearest_even(num: float) -> int:
 def expand_and_repeat(data):
     # Step 1: 扩展维度，将 (a, b) 变为 (a, b, 1)
     expanded_data = np.expand_dims(data, axis=-1)
-    
+
     # Step 2: 沿着最后一个维度重复三次，得到 (a, b, 1, 3)
     repeated_data = np.repeat(expanded_data, 3, axis=-1)
-    
-    return repeated_data.reshape(data.shape[0],data.shape[1],1,3)
+
+    return repeated_data.reshape(data.shape[0], data.shape[1], 1, 3)
 
 
 def subtract_from_row(df: pd.DataFrame, row_no: int, diff: float) -> pd.DataFrame:
@@ -252,9 +254,6 @@ def evaluate_model(y_true, y_pred, y_prob):
     f1 = f1_score(y_true, y_pred)
 
     return accuracy, recall, auc, f1
-
-
-
 
 
 def validate_input(XA, XB, y):
@@ -359,3 +358,49 @@ def print_column_types(df):
     # 直接打印结果
     print("分类列的数量:", categorical_count)
     print("数值列的数量:", numerical_count)
+
+
+def determine_task_type(y_L):
+    """
+    根据 y_L 判断是分类任务还是回归任务。
+
+    参数:
+    - y_L: 有标签数据的标签 (numpy ndarray)。
+
+    返回:
+    - "classification" 或 "regression"。
+    """
+    # 如果 y_L 是整数类型，且唯一值数量较少，判断为分类任务
+    if np.issubdtype(y_L.dtype, np.integer):
+        return "classification"
+
+    # 如果 y_L 是浮点数类型，或者唯一值数量较多，判断为回归任务
+    elif np.issubdtype(y_L.dtype, np.floating):
+        return "regression"
+
+    # 如果无法判断，抛出异常
+    else:
+        raise ValueError("无法判断任务类型，y_L 的数据类型不明确。")
+
+
+def get_top_k_percent_idx(scores, k, pick_lowest=False):
+    """
+    获取指定排序方向（最低/最高）的前 k 比例样本的索引。
+
+    :param scores: ndarray，一维评分数组
+    :param k: 比例（范围 0~1 之间），例如 0.1 表示前 10% 的数据
+    :param pick_lowest: 若为 True，则返回分数最小的前 k% 索引；否则返回最大的前 k%
+    :return: ndarray，前 k 比例样本在原数组中的索引
+    """
+    n = len(scores)
+    # 计算前 k 比例对应的样本数量（至少取 1 个）
+    top_k_count = max(1, int(n * k))
+
+    if pick_lowest:
+        # 取出最小的 top_k_count 个元素索引
+        idx_partition = np.argpartition(scores, top_k_count - 1)[:top_k_count]
+    else:
+        # 取出最大的 top_k_count 个元素索引
+        idx_partition = np.argpartition(scores, n - top_k_count)[-top_k_count:]
+
+    return idx_partition
