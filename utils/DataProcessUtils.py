@@ -404,3 +404,63 @@ def get_top_k_percent_idx(scores, k, pick_lowest=False):
         idx_partition = np.argpartition(scores, n - top_k_count)[-top_k_count:]
 
     return idx_partition
+
+
+def split_data_into_labeled_and_unlabeled(X, y, hidden_rate=0.1, random_state=None):
+    """
+    随机隐藏 hidden_rate 比例的标签，返回:
+        X_L, y_L   : 有标签的特征和标签
+        X_U, y_U_orig : 无标签的特征，以及它们原始的标签（便于后续验证）
+
+    参数:
+        X : 特征矩阵 [n_samples, n_features]
+        y : 标签向量 [n_samples]
+        hidden_rate : 隐藏标签的比例 (默认为 0.1)
+        random_state : 随机种子 (可选，控制复现)
+
+    返回:
+        X_L, y_L, X_U, y_U_orig
+    """
+    X = np.array(X)
+    y = np.array(y)
+
+    # 设置随机种子（可选）
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    num_samples = len(y)
+    num_hidden = int(num_samples * hidden_rate)
+
+    # 从所有样本中随机选择需要隐藏标签的索引
+    hidden_indices = np.random.choice(num_samples, size=num_hidden, replace=False)
+
+    # 构造掩码：选中的索引为 False（表示隐藏）
+    mask = np.ones(num_samples, dtype=bool)
+    mask[hidden_indices] = False
+
+    # 有标签部分
+    X_L = X[mask]
+    y_L = y[mask]
+
+    # 无标签部分（隐藏）
+    X_U = X[~mask]
+    y_U_orig = y[~mask]
+
+    # 打印信息，帮助调用者了解数据分割后的情况
+    print("数据分割完成！")
+    print(f"总样本数: {num_samples}")
+    print(f"隐藏比例: {hidden_rate:.2f} (隐藏样本数: {num_hidden})")
+    print(f"有标签样本数 (X_L, y_L): {len(X_L)}")
+    print(f"无标签样本数 (X_U): {len(X_U)}")
+    print(f"无标签样本的原始标签数 (y_U_orig): {len(y_U_orig)}")
+    print("\n数据格式示例:")
+    print(f"X_L shape: {X_L.shape}, y_L shape: {y_L.shape}")
+    print(f"X_U shape: {X_U.shape}, y_U_orig shape: {y_U_orig.shape}")
+    print("\n有标签样本 (前5个):")
+    print(f"X_L[:5]:\n{X_L[:5]}")
+    print(f"y_L[:5]: {y_L[:5]}")
+    print("\n无标签样本 (前5个):")
+    print(f"X_U[:5]:\n{X_U[:5]}")
+    print(f"y_U_orig[:5]: {y_U_orig[:5]}")
+
+    return X_L, y_L, X_U, y_U_orig
