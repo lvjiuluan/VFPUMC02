@@ -1,3 +1,4 @@
+import logging
 import os
 
 import pandas as pd
@@ -383,7 +384,7 @@ def determine_task_type(y_L):
         raise ValueError("无法判断任务类型，y_L 的数据类型不明确。")
 
 
-def get_top_k_percent_idx(scores, k, pick_lowest=False):
+def get_top_k_percent_idx_without_confidence(scores, k, pick_lowest=False):
     """
     获取指定排序方向（最低/最高）的前 k 比例样本的索引。
 
@@ -404,6 +405,53 @@ def get_top_k_percent_idx(scores, k, pick_lowest=False):
         idx_partition = np.argpartition(scores, n - top_k_count)[-top_k_count:]
 
     return idx_partition
+
+
+def get_top_k_percent_idx(scores, k, pick_lowest=False, min_confidence=0.0):
+    """
+    从分数数组中选出前 k% 的索引。
+
+    参数:
+    ----------
+    scores : np.ndarray
+        数据的置信度分数数组，长度为 N。
+    k : float
+        取最高置信度样本的比例，例如 0.1 表示 10%。若取最低置信度样本则表示底部 10%。
+    pick_lowest : bool, default=False
+        是否选择最低置信度的 k%。默认为 False，即选择最高置信度。
+    min_confidence : float, default=0.0
+        最低置信度阈值，低于此置信度的样本将被剔除，不参与选取。
+
+    返回:
+    ----------
+    np.ndarray
+        选出样本的索引数组。
+    """
+
+    # 先根据 min_confidence 剔除低置信度样本
+    valid_mask = scores >= min_confidence
+    valid_indices = np.where(valid_mask)[0]
+    valid_scores = scores[valid_mask]
+    if len(valid_scores) == 0:
+        logging.warning(
+            "所有样本的置信度均低于 min_confidence=%.4f，无法选出任何样本！", min_confidence
+        )
+        return np.array([], dtype=int)
+
+    # 计算需要选出的样本数
+    top_k_count = int(max(1, len(valid_scores) * k))  # 至少保留 1
+
+    if pick_lowest:
+        # 选出最低置信度的 top_k_count 个
+        sorted_indices = np.argsort(valid_scores)
+        selected_indices = sorted_indices[:top_k_count]
+    else:
+        # 选出最高置信度的 top_k_count 个
+        sorted_indices = np.argsort(valid_scores)[::-1]
+        selected_indices = sorted_indices[:top_k_count]
+
+    # 从 valid_indices 中拿到实际原始索引
+    return valid_indices[selected_indices]
 
 
 def split_data_into_labeled_and_unlabeled(X, y, hidden_rate=0.1, random_state=None):
