@@ -167,4 +167,106 @@ class TwoStep():
             self.pred[unlabeled_indices] = final_pred
 
     def __fit__reg(self, X_L, y_L, X_U):
-        pass
+        """
+        半监督回归方法：通过自训练迭代逐步利用未标注数据的高置信度预测结果增强训练集。
+
+        参数:
+            X_L, y_L: 已标注数据及其标签
+            X_U: 未标注数据
+            self.k: 取最高置信度样本的比例，例如 10% 则 k=0.1
+            self.max_iter: 最大迭代次数
+        """
+        # 初始化预测结果数组
+        unlabeled_indices = np.arange(len(X_U))
+        self.pred = np.full(len(X_U), np.nan)
+        logging.info("初始化预测结果数组，长度=%d", len(self.pred))
+        logging.info("开始自训练迭代，共计划进行 %d 次迭代", self.max_iter)
+        start_time = time.time()
+
+        for epoch in range(self.max_iter):
+            epoch_start_time = time.time()
+            logging.info("===== 第 %d 次迭代开始 =====", epoch)
+            logging.info("当前 Labeled 数据量: %d；Unlabeled 数据量: %d", len(X_L), len(X_U))
+
+            if len(X_L) == 0:
+                logging.warning("当前没有任何有标签的数据，跳过本次迭代。")
+                break
+
+            # 1. 对当前 Labeled 数据进行训练
+            logging.info("开始训练回归器 (基于 %d 个样本)...", len(X_L))
+            reg_start_time = time.time()
+            self.reg.fit(X_L, y_L)
+            reg_time = time.time() - reg_start_time
+            logging.info("回归器训练完成，耗时 %.2f 秒。", reg_time)
+
+            # 2. 对 Unlabeled 数据打分
+            logging.info("开始对 Unlabeled 数据进行置信度打分...")
+            scores_start_time = time.time()
+            predictions = self.reg.predict(X_U)
+            mean_prediction = np.mean(predictions)
+            std_prediction = np.std(predictions)
+            # 计算每个预测值的 Z 分数（标准化偏离程度）
+            scores = np.abs((predictions - mean_prediction) / std_prediction)
+            scores_time = time.time() - scores_start_time
+            logging.info("完成置信度打分，耗时 %.2f 秒。", scores_time)
+            logging.debug("预测值统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
+                          predictions.min(), predictions.max(), predictions.mean(), predictions.std())
+            logging.debug("置信度分数统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
+                          scores.min(), scores.max(), scores.mean(), scores.std())
+
+            # 3. 选出最高置信度的那部分数据（比例可自定义）
+            logging.info("选取前 %.2f%% 的高置信度样本。", self.k * 100)
+            idx = get_top_k_percent_idx(scores, self.k, pick_lowest=True)  # pick_lowest=True 表示选择偏离均值最小的样本
+            logging.info("本轮选出高置信度样本数量: %d，占比约为 %.2f%%", len(idx), self.k * 100)
+            logging.debug("选中的样本索引: %s", idx)
+            selected_original_idx = unlabeled_indices[idx]
+            logging.debug("选中的原始样本索引: %s", selected_original_idx)
+
+            # 4. 得到这部分数据的预测标签
+            logging.info("对选中的高置信度样本进行预测标签。")
+            best_pred = predictions[idx]
+            logging.debug("选中样本的预测值: %s", best_pred)
+
+            # 把 self.pred 对应位置赋值为 best_pred
+            self.pred[selected_original_idx] = best_pred
+            logging.debug("更新 self.pred 的值。")
+
+            # 5. 将这些样本从 X_U 中移除，并“转正”到 X_L, y_L
+            logging.info("将高置信度样本合并到 Labeled 集。")
+            # 5.1 将高置信度样本及其预测标签合并到 Labeled 集
+            X_L = np.concatenate([X_L, X_U[idx]], axis=0)
+            y_L = np.concatenate([y_L, best_pred], axis=0)
+            logging.info("已将高置信度样本合并到 Labeled 集，合并后 Labeled 数据量: %d", len(X_L))
+
+            # 5.2 从 Unlabeled 集中删除这些样本
+            X_U = np.delete(X_U, idx, axis=0)
+            unlabeled_indices = np.delete(unlabeled_indices, idx, axis=0)
+            logging.info("从 Unlabeled 集中删除高置信度样本后，剩余 Unlabeled 数据量: %d", len(X_U))
+
+            # 6. 如果此时 X_U 已经为空，就结束迭代
+            if len(X_U) == 0:
+                logging.info("在 epoch=%d 时，Unlabeled 数据已空，提前结束迭代", epoch)
+                break
+
+            epoch_elapsed_time = time.time() - epoch_start_time
+            logging.info("===== 第 %d 次迭代结束，耗时 %.2f 秒 =====", epoch, epoch_elapsed_time)
+
+        total_elapsed_time = time.time() - start_time
+        logging.info("训练流程结束。共进行了 %d 次迭代，耗时 %.2f 秒。", epoch, total_elapsed_time)
+        logging.info("目前尚有 %d 个样本未获得预测标签。", len(X_U))
+        if len(X_U) != 0:
+            logging.info("还有 %d 个样本没有预测, self.pred中为nan的数量 = %d, len(X_U) = %d, len(unlabeled_indices) = %d",
+                         len(X_U), np.isnan(self.pred).sum(), len(X_U), len(unlabeled_indices))
+            # 还有一些未标记样本没有预测，需要预测
+            logging.info("对剩余未标记的样本进行最终预测。")
+            final_pred_start_time = time.time()
+            final_pred = self.reg.predict(X_U)
+            final_pred_time = time.time() - final_pred_start_time
+            logging.info("完成最终预测，耗时 %.2f 秒。", final_pred_time)
+            logging.debug("最终预测值统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
+                          final_pred.min(), final_pred.max(), final_pred.mean(), final_pred.std())
+            # 将最终剩余未标记数据的预测结果，映射回对应的 self.pred 索引
+            self.pred[unlabeled_indices] = final_pred
+
+    def get_unlabled_predict(self):
+        return self.pred
