@@ -56,6 +56,16 @@ class VF_LR(VF_BASE_CLF):
     def predict_proba(self, XA, XB):
         pass
 
+    def predict_proba(self, XA, XB):
+        # XB 添加一列
+        XB = np.c_[np.ones(XB.shape[0]), XB]
+        d = XA.dot(self.weightA) + XB.dot(self.weightB)
+        f = 1 / (1 + np.exp(-d))
+        return f
+
+    def get_loss_history(self):
+        return self.loss
+
 
 def generate_paillier_keypair():
     return None, None
