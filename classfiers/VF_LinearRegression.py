@@ -42,8 +42,9 @@ class VF_LinearRegression(VF_BASE_REG):
             # 4.1 A、B方更新模型
             Client_A.task_3()
             Client_B.task_3()
-            # 更新每轮的损失
-            self.loss_history.append(Client_C.loss_history)
+
+        # 更新损失损失
+        self.loss_history = Client_C.loss_history
         # 更新模型权重
         self.weightA = Client_A.weights
         self.weightB = Client_B.weights
@@ -84,11 +85,6 @@ class ClientA(Client):
     def compute_encrypted_dL_a(self, encrypted_d):
         encrypted_dL_a = self.X.T.dot(encrypted_d) / self.n + self.config['lambda'] * self.weights
         return encrypted_dL_a
-
-    # 做predict
-    def predict(self, X_test):
-        u_a = X_test.dot(self.weights)
-        return u_a
 
     # 计算[[u_a]],[[L_a]]发送给B方
     def task_1(self, client_B_name):
@@ -146,11 +142,6 @@ class ClientB(Client):
     def compute_encrypted_dL_b(self, encrypted_d):
         encrypted_dL_b = self.X.T.dot(encrypted_d) / self.n + self.config['lambda'] * self.weights
         return encrypted_dL_b
-
-    # 做predict
-    def predict(self, X_test):
-        u_b = X_test.dot(self.weights)
-        return u_b
 
     # 计算[[d]] 发送给A方；计算[[L_b]], [[L_ab]]，发送给C方
     def task_1(self, client_A_name, client_C_name):
