@@ -133,6 +133,7 @@ class ClientB(Client):
     def __init__(self, X, y, config):
         super().__init__(config)
         self.X = X
+        self.n = X.shape[0]
         self.y = y
         self.weights = np.zeros(self.X.shape[1])
 
