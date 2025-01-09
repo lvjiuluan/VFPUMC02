@@ -581,7 +581,7 @@ class ClientB(Client):
         self.send_data(data_to_C, self.other_client[client_C_name])
         logging.info("B方: 成功将加密并掩码处理的梯度 masked_dL_b 发送给 C 方。")
 
-    def receive_decrypted_data_and_update_parameters2(self):
+    def receive_decrypted_data_and_update_parameters(self):
         """
         B方在接收到C方解密后的梯度或其他必要信息后，更新本地模型参数。
 
