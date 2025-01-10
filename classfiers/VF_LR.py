@@ -1,6 +1,7 @@
 import math
 import time
-
+import logging
+from utils.SimpleHomomorphicEncryption import SimpleHomomorphicEncryption
 import numpy as np
 
 from .VF_BASE import VF_BASE_CLF
@@ -12,6 +13,8 @@ class VF_LR(VF_BASE_CLF):
         self.weightA = None
         self.weightB = None
         self.loss = []
+
+
 
     def fit(self, XA, XB, y):
         # XB 添加一列
@@ -67,18 +70,6 @@ class VF_LR(VF_BASE_CLF):
         return self.loss
 
 
-def generate_paillier_keypair():
-    return None, None
-
-
-def encrypt(x):
-    return x
-
-
-def decrypt(x):
-    return x
-
-
 class Client(object):
     def __init__(self, config):
         # 模型参数
@@ -121,7 +112,7 @@ class ClientA(Client):
 
     # 加密梯度计算
     def compute_encrypted_dJ_a(self, encrypted_u):
-        encrypted_dJ_a = self.X.T.dot(encrypted_u) + self.config["lambda"] * self.weights
+        encrypted_dJ_a = self.X.T.dot(encrypted_u) #+ self.config["lambda"] * self.weights
         return encrypted_dJ_a
 
     # 模型参数更新
@@ -136,8 +127,8 @@ class ClientA(Client):
         z_a = self.compute_z_a()
         u_a = 0.25 * z_a
         z_a_square = z_a ** 2
-        encrypted_u_a = np.array([encrypt(x) for x in u_a])
-        encrypted_z_a_square = np.array([encrypt(x) for x in z_a_square])
+        encrypted_u_a = np.array([public_key.encrypt(x) for x in u_a])
+        encrypted_z_a_square = np.array([public_key.encrypt(x) for x in z_a_square])
         dt.update({'encrypted_u_a': encrypted_u_a})
         # 将数据发送给B
         send_to_B = {'encrypted_u_a': encrypted_u_a, 'encrypted_z_a_square': encrypted_z_a_square}
@@ -193,7 +184,7 @@ class ClientB(Client):
 
     # 加密计算梯度
     def compute_encrypted_dJ_b(self, encrypted_u):
-        encrypted_dJ_b = self.X.T.dot(encrypted_u) + self.config['lambda'] * self.weights
+        encrypted_dJ_b = self.X.T.dot(encrypted_u) #+ self.config['lambda'] * self.weights
         return encrypted_dJ_b
 
     # 模型参数更新
@@ -207,7 +198,7 @@ class ClientB(Client):
         public_key = dt['public_key']
         z_b = self.compute_z_b()
         u_b = 0.25 * z_b - self.y + 0.25
-        encrypted_u_b = np.array([encrypt(x) for x in u_b])
+        encrypted_u_b = np.array([public_key.encrypt(x) for x in u_b])
         dt.update({'encrypted_u_b': encrypted_u_b})
         dt.update({'z_b': z_b})
         data_to_A = {'encrypted_u_b': encrypted_u_b}
@@ -253,7 +244,7 @@ class ClientC(Client):
 
     # 分发密钥
     def task_1(self, client_A_name, client_B_name):
-        public_key, private_key = generate_paillier_keypair()
+        public_key, private_key = SimpleHomomorphicEncryption.generate_paillier_keypair()
         self.public_key = public_key
         self.private_key = private_key
         data_to_AB = {'public_key': public_key}
@@ -267,11 +258,11 @@ class ClientC(Client):
         assert "encrypted_masked_dJ_b" in dt.keys(), "Error: 'encrypted_masked_dJ_b' from B in step 2 not sucessfully receive"
         encrypted_masked_dJ_a = dt['encrypted_masked_dJ_a']
         encrypted_masked_dJ_b = dt['encrypted_masked_dJ_b']
-        masked_dJ_a = np.array([decrypt(x) for x in encrypted_masked_dJ_a])
-        masked_dJ_b = np.array([decrypt(x) for x in encrypted_masked_dJ_b])
+        masked_dJ_a = np.array([self.private_key.decrypt(x) for x in encrypted_masked_dJ_a])
+        masked_dJ_b = np.array([self.private_key.decrypt(x) for x in encrypted_masked_dJ_b])
         assert "encrypted_loss" in dt.keys(), "Error: 'encrypted_loss' from B in step 2 not successfuly receive"
         encrypted_loss = dt['encrypted_loss']
-        loss = decrypt(encrypted_loss) / self.A_data_shape[0] + math.log(2)
+        loss = self.private_key.decrypt(encrypted_loss) / self.A_data_shape[0] + math.log(2)
         # print("******loss: ", loss, "******")
         self.loss.append(loss)
         # 回传
