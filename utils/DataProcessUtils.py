@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.metrics import accuracy_score, recall_score, roc_auc_score, f1_score
 import numpy as np
 import yaml
-from consts.Constants import CONFITS_PATH
+from consts.Constants import CONFIGS_PATH
 import random
 
 
@@ -277,7 +277,7 @@ def validate_input(XA, XB, y):
 
 def getConfigYaml(configName):
     configFileName = f"{configName}.yaml"
-    configFilePath = os.path.join(CONFITS_PATH, configFileName)
+    configFilePath = os.path.join(CONFIGS_PATH, configFileName)
     # 读取 YAML 文件
     with open(configFilePath, 'r', encoding='utf-8') as file:
         config = yaml.safe_load(file)

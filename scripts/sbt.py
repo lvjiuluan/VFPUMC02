@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from fate.arch.dataframe import PandasReader
 from fate.ml.ensemble.algo.secureboost.hetero.guest import HeteroSecureBoostGuest
@@ -8,24 +10,22 @@ from datetime import datetime
 from fate.arch.context import create_context
 from fate.arch.launchers.multiprocess_launcher import launch
 import yaml
+from utils.FateUtils import *
+from utils.pklUtils import *
 
-# 不同平台，要调整
-ROOT_PATH = r'/root/VFPUMC02'
+from consts.Constants import *
 
-DATASETS_PATH = os.path.join(ROOT_PATH,"datasets")
-CONFITS_PATH = os.path.join(ROOT_PATH,"configs")
 
-def train(ctx: Context, data: DataFrame, num_trees: int = 3, objective: str = 'binary:bce', max_depth: int = 3, learning_rate: float=0.3):
-    
+def train(ctx: Context, data: DataFrame, config):
     if ctx.is_on_guest:
-        bst = HeteroSecureBoostGuest(num_trees=num_trees, objective=objective, \
-            max_depth=max_depth, learning_rate=learning_rate)
+        bst = HeteroSecureBoostGuest(**config)
     else:
-        bst = HeteroSecureBoostHost(num_trees=num_trees, max_depth=max_depth)
+        bst = HeteroSecureBoostHost(**config)
 
     bst.fit(ctx, data)
 
     return bst
+
 
 def predict(ctx: Context, data: DataFrame, model_dict: dict):
     if ctx.is_on_guest:
@@ -37,31 +37,41 @@ def predict(ctx: Context, data: DataFrame, model_dict: dict):
 
 
 def csv_to_df(ctx, file_path, has_label=True):
-
     df = pd.read_csv(file_path)
-    df["sample_id"] = [i for i in range(len(df))]
     if has_label:
-        reader = PandasReader(sample_id_name="sample_id", match_id_name="id", label_name="y", dtype="float32") 
+        reader = PandasReader(sample_id_name="sample_id", match_id_name="id", label_name="y", dtype="float32")
     else:
         reader = PandasReader(sample_id_name="sample_id", match_id_name="id", dtype="float32")
 
     fate_df = reader.to_frame(ctx, df)
     return fate_df
 
+
 def run(ctx):
-    num_tree = 3
-    max_depth = 3
+    config = load_config(SBT_CONFIGS_PATH)
+    result = {}
     if ctx.is_on_guest:
-        data = csv_to_df(ctx, './breast_hetero_guest.csv')
-        bst = train(ctx, data, num_trees=num_tree, max_depth=max_depth)
+        guest_result = {}
+        data = csv_to_df(ctx, B_guest_path)
+        bst = train(ctx, data, config)
         model_dict = bst.get_model()
         pred = predict(ctx, data, model_dict)
-        print(pred.as_pd_df())
+        pred_df = pred.as_pd_df()
+        guest_result['model_dict'] = model_dict
+        guest_result['pred_df'] = pred_df
+        result['guest_result'] = guest_result
     else:
-        data = csv_to_df(ctx, './breast_hetero_host.csv', has_label=False)
-        bst = train(ctx, data, num_trees=num_tree, max_depth=max_depth)
+        host_result = {}
+        data = csv_to_df(ctx, A_host_path, has_label=False)
+        bst = train(ctx, data, config)
         model_dict = bst.get_model()
-        predict(ctx, data, model_dict)
+        pred = predict(ctx, data, model_dict)
+        pred_df = pred.as_pd_df()
+        host_result['model_dict'] = model_dict
+        host_result['pred_df'] = pred_df
+        result['host_result'] = host_result
+    save_to_pkl(result, SBT_PKL_PATH)
+
 
 if __name__ == '__main__':
     launch(run)
