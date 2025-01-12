@@ -1,3 +1,9 @@
+# 添加项目的根路径，不同平台运行不一样
+import sys
+sys.path.append('D:\PyCharmProjects\VFPUMC02')
+sys.path.append(r'C:\Users\Administrator\PycharmProjects\VFPUMC02')
+sys.path.append(r'/root/VFPUMC02')
+
 import os
 
 import pandas as pd
@@ -16,11 +22,17 @@ from utils.pklUtils import *
 from consts.Constants import *
 
 
+
+
 def train(ctx: Context, data: DataFrame, config):
     if ctx.is_on_guest:
-        bst = HeteroSecureBoostGuest(**config)
+        # 过滤掉与训练无关的参数
+        filtered_config = filter_params_for_class(HeteroSecureBoostGuest, config)
+        bst = HeteroSecureBoostGuest(**filtered_config)
     else:
-        bst = HeteroSecureBoostHost(**config)
+        # 过滤掉与训练无关的参数
+        filtered_config = filter_params_for_class(HeteroSecureBoostHost, config)
+        bst = HeteroSecureBoostHost(**filtered_config)
 
     bst.fit(ctx, data)
 
@@ -49,29 +61,26 @@ def csv_to_df(ctx, file_path, has_label=True):
 
 def run(ctx):
     config = load_config(SBT_CONFIGS_PATH)
-    result = {}
     if ctx.is_on_guest:
-        guest_result = {}
+        result = {}
         data = csv_to_df(ctx, B_guest_path)
         bst = train(ctx, data, config)
         model_dict = bst.get_model()
         pred = predict(ctx, data, model_dict)
         pred_df = pred.as_pd_df()
-        guest_result['model_dict'] = model_dict
-        guest_result['pred_df'] = pred_df
-        result['guest_result'] = guest_result
+        result['model_dict'] = model_dict
+        result['pred_df'] = pred_df
+        save_to_pkl(result,SBT_PKL_PATH)
     else:
+        result = {}
         host_result = {}
         data = csv_to_df(ctx, A_host_path, has_label=False)
         bst = train(ctx, data, config)
         model_dict = bst.get_model()
-        pred = predict(ctx, data, model_dict)
-        pred_df = pred.as_pd_df()
-        host_result['model_dict'] = model_dict
-        host_result['pred_df'] = pred_df
-        result['host_result'] = host_result
-    save_to_pkl(result, SBT_PKL_PATH)
+        predict(ctx, data, model_dict)
+        
 
 
 if __name__ == '__main__':
     launch(run)
+    

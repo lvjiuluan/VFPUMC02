@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from fate.arch.context import create_context
 import yaml
-
+import inspect
 
 def fate_construct_df(XA, XB, y):
     """
@@ -153,3 +153,84 @@ def save_df_to_csv(df: pd.DataFrame, file_path: str):
     except Exception as e:
         print(f"保存 DataFrame 到 {file_path} 时发生错误：{e}")
         raise
+
+def load_host_guest_data(A_host_path: str, B_guest_path: str, skip_columns: list):
+    """
+    从两个 CSV 文件中加载数据，跳过指定的列，并返回特征和标签的 NumPy 数组。
+
+    Args:
+        A_host_path (str): `A_host.csv` 文件的路径。
+        B_guest_path (str): `B_guest.csv` 文件的路径。
+        skip_columns (List[str]): 要跳过的列名列表。
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray, np.ndarray]: 
+            - XA: 从 `A_host.csv` 提取的特征数据。
+            - XB: 从 `B_guest.csv` 提取的特征数据。
+            - y: 从 `B_guest.csv` 提取的标签数据。
+
+    Raises:
+        FileNotFoundError: 如果任一文件不存在。
+        ValueError: 如果 `'y'` 列在 `B_guest.csv` 中不存在。
+    """
+    # 检查文件是否存在
+    if not os.path.isfile(A_host_path):
+        raise FileNotFoundError(f"文件不存在: {A_host_path}")
+    if not os.path.isfile(B_guest_path):
+        raise FileNotFoundError(f"文件不存在: {B_guest_path}")
+
+    # 读取 CSV 文件到 DataFrame
+    A_df = pd.read_csv(A_host_path)
+    B_df = pd.read_csv(B_guest_path)
+
+    # 打印读取成功的消息（可选）
+    print(f"成功读取 {A_host_path} 和 {B_guest_path}")
+
+    # 检查 'y' 列是否存在于 B_df 中
+    if 'y' not in B_df.columns:
+        raise ValueError("在 `B_guest.csv` 中未找到标签列 'y'")
+
+    # 删除指定的列，如果这些列存在
+    A_columns_before = set(A_df.columns)
+    B_columns_before = set(B_df.columns)
+
+    A_df = A_df.drop(columns=[col for col in skip_columns if col in A_df.columns], errors='ignore')
+    B_df = B_df.drop(columns=[col for col in skip_columns if col in B_df.columns], errors='ignore')
+
+    # 打印跳过的列信息（可选）
+    skipped_A = set(skip_columns).intersection(A_columns_before)
+    skipped_B = set(skip_columns).intersection(B_columns_before)
+    if skipped_A:
+        print(f"A_host.csv 中跳过的列: {skipped_A}")
+    if skipped_B:
+        print(f"B_guest.csv 中跳过的列: {skipped_B}")
+
+    # 提取标签 y
+    y = B_df['y'].values
+
+    # 删除 'y' 列以获取特征
+    B_features_df = B_df.drop(columns=['y'])
+
+    # 转换 DataFrame 为 NumPy 数组
+    XA = A_df.values
+    XB = B_features_df.values
+
+    return XA, XB, y
+
+
+
+def filter_params_for_class(cls, config):
+    """
+    过滤掉与类的构造函数无关的参数。
+
+    :param cls: 类名
+    :param config: 包含参数的字典
+    :return: 过滤后的字典，只包含构造函数所需的参数
+    """
+    # 获取构造函数的参数名
+    constructor_params = inspect.signature(cls.__init__).parameters
+
+    # 过滤掉 config 中与构造函数无关的键值对
+    filtered_config = {k: v for k, v in config.items() if k in constructor_params}
+
+    return filtered_config
