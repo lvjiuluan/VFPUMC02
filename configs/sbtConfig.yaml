@@ -1,0 +1,5 @@
+num_tree: 3
+max_depth: 3
+A_host_csv_file_name: 'A_host.csv'
+B_guest_csv_file_name: 'B_guest.csv'
+

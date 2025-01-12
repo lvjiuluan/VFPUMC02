@@ -2,7 +2,9 @@ import os
 
 # ROOT_PATH = r'D:\PyCharmProjects\VFPUMC02'
 
-ROOT_PATH = r'/root/semi/VFPUMC02'
+# ROOT_PATH = r'/root/semi/VFPUMC02'
+
+ROOT_PATH = r'/root/VFPUMC02'
 
 DATASETS_PATH = os.path.join(ROOT_PATH,"datasets")
 
