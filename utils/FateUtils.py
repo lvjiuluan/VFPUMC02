@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 
 import pandas as pd
 import numpy as np
@@ -6,6 +8,8 @@ from fate.arch.context import create_context
 import yaml
 import inspect
 from fate.arch.dataframe import PandasReader
+from consts.Constants import *
+from utils.pklUtils import *
 
 def fate_construct_df(XA, XB, y=None):
     """
@@ -249,7 +253,7 @@ def df_to_data(ctx, df, has_label=True):
     return fate_df
 
 
-def execute_sbt_command(config, sbt_script_path, sbt_pkl_guest_path, sbt_pkl_host_path):
+def execute_sbt_command(config):
     """
     执行 SBT 脚本命令，检查执行结果，并加载 guest 和 host 的结果文件。
 
@@ -267,7 +271,7 @@ def execute_sbt_command(config, sbt_script_path, sbt_pkl_guest_path, sbt_pkl_hos
         # 构建命令
         command = [
             sys.executable,
-            sbt_script_path,
+            SBT_SCRIPT_PATH,
             '--parties',
             'guest:9999',
             'host:10000',
@@ -290,8 +294,8 @@ def execute_sbt_command(config, sbt_script_path, sbt_pkl_guest_path, sbt_pkl_hos
         print("Command executed successfully.")
         
         # 加载 guest 和 host 的结果
-        guest_result = load_from_pkl(sbt_pkl_guest_path)
-        host_result = load_from_pkl(sbt_pkl_host_path)
+        guest_result = load_from_pkl(SBT_PKL_GUEST_PATH)
+        host_result = load_from_pkl(SBT_PKL_HOST_PATH)
         
         # 返回结果
         return {

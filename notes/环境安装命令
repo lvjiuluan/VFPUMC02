@@ -1,0 +1,13 @@
+# FATE requires Python >= 3.10
+conda create -n fate_env python=3.10
+conda activate fate_env
+
+# 安装 FATE
+pip install pyfate==2.2.0
+
+# 安装 ipykernel
+conda install -c anaconda ipykernel
+python -m ipykernel install --user --name=fate_env
+
+# 下载项目
+git clone https://github.com/lvjiuluan/VFPUMC02.git
