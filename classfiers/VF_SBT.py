@@ -57,7 +57,7 @@ class VF_SBT(VF_BASE_CLF):
         :return: 预测结果或预测概率
         """
         if self._is_fitted:
-            return self.pred if return_proba else self.predict_result
+            return self.y_proba if return_proba else self.predict_result
 
         try:
             A_df, B_df = fate_construct_df(XA, XB)
