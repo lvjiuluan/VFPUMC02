@@ -60,24 +60,75 @@ def csv_to_df(ctx, file_path, has_label=True):
 
 
 def run(ctx):
+    # 加载配置
     config = load_config(SBT_CONFIGS_PATH)
-    if ctx.is_on_guest:
-        result = {}
-        data = csv_to_df(ctx, B_guest_path)
-        bst = train(ctx, data, config)
-        model_dict = bst.get_model()
-        pred = predict(ctx, data, model_dict)
+    
+    # 初始化结果字典
+    result = {}
+    
+    # 判断是否为 guest
+    is_guest = ctx.is_on_guest
+    
+    # 根据角色加载数据
+    data_path = B_guest_path if is_guest else A_host_path
+    data = csv_to_df(ctx, data_path, has_label=is_guest)
+    
+    # 训练模型
+    bst = train(ctx, data, config)
+    model_dict = bst.get_model()
+    
+    # 预测
+    pred = predict(ctx, data, model_dict)
+    if pred is not None:
         pred_df = pred.as_pd_df()
+    else:
+        pred_df = None
+    
+    # 构建结果
+    role_key = 'guest' if is_guest else 'host'
+    result[role_key] = {
+        'model_dict': model_dict,
+        'pred_df': pred_df,
+        'ctx': ctx
+    }
+
+    # 设置保存路径
+    SBT_PKL_PATH = SBT_PKL_GUEST_PATH if is_guest else SBT_PKL_HOST_PATH
+    
+    # 保存结果
+    add_to_dict_pkl(result, SBT_PKL_PATH)
+
+def run(ctx):
+    if ctx.is_on_guest:
+        config = load_config(SBT_CONFIGS_PATH)
+        result = {}
+        train_data = csv_to_df(ctx, B_guest_train_path)
+        test_data = csv_to_df(ctx, B_guest_test_path,has_label=False)
+        bst = train(ctx, train_data, config)
+        model_dict = bst.get_model()
+        pred = predict(ctx, test_data, model_dict)
+        if pred is not None:
+            pred_df = pred.as_pd_df()
+        else:
+            pred_df = None
         result['model_dict'] = model_dict
         result['pred_df'] = pred_df
-        save_to_pkl(result,SBT_PKL_PATH)
+        save_to_pkl(result,SBT_PKL_GUEST_PATH)
     else:
+        config = load_config(SBT_CONFIGS_PATH)
         result = {}
-        host_result = {}
-        data = csv_to_df(ctx, A_host_path, has_label=False)
-        bst = train(ctx, data, config)
+        train_data = csv_to_df(ctx, A_host_train_path, has_label=False)
+        test_data = csv_to_df(ctx, A_host_train_path, has_label=False)
+        bst = train(ctx, train_data, config)
         model_dict = bst.get_model()
-        predict(ctx, data, model_dict)
+        pred = predict(ctx, test_data, model_dict)
+        if pred is not None:
+            pred_df = pred.as_pd_df()
+        else:
+            pred_df = None
+        result['model_dict'] = model_dict
+        result['pred_df'] = pred_df
+        save_to_pkl(result,SBT_PKL_HOST_PATH)
         
 
 

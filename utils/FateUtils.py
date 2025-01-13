@@ -5,15 +5,16 @@ import numpy as np
 from fate.arch.context import create_context
 import yaml
 import inspect
+from fate.arch.dataframe import PandasReader
 
-def fate_construct_df(XA, XB, y):
+def fate_construct_df(XA, XB, y=None):
     """
     构造两个 DataFrame: A_df 和 B_df。
 
     Args:
         XA (numpy.ndarray): 用于构造 A_df 的数据。
         XB (numpy.ndarray): 用于构造 B_df 的数据。
-        y (numpy.ndarray): 用于构造 B_df 的 'y' 列的数据。
+        y (numpy.ndarray, optional): 用于构造 B_df 的 'y' 列的数据。如果为 None，则不包含 'y' 列。
 
     Returns:
         tuple: 包含 A_df 和 B_df 的元组。
@@ -35,8 +36,11 @@ def fate_construct_df(XA, XB, y):
     # 构造 B_df
     sample_ids_b = list(range(len_XB))
     ids_b = list(range(len_XB))
-    columns_b = ['sample_id', 'id', 'y'] + [f'x{i}' for i in range(q)]
-    data_b = {'sample_id': sample_ids_b, 'id': ids_b, 'y': y}
+    columns_b = ['sample_id', 'id'] + [f'x{i}' for i in range(q)]
+    data_b = {'sample_id': sample_ids_b, 'id': ids_b}
+    if y is not None:
+        columns_b.append('y')
+        data_b['y'] = y
     for i in range(q):
         data_b[f'x{i}'] = XB[:, i]
     B_df = pd.DataFrame(data_b)
@@ -234,3 +238,66 @@ def filter_params_for_class(cls, config):
     filtered_config = {k: v for k, v in config.items() if k in constructor_params}
 
     return filtered_config
+
+def df_to_data(ctx, df, has_label=True):
+    if has_label:
+        reader = PandasReader(sample_id_name="sample_id", match_id_name="id", label_name="y", dtype="float32")
+    else:
+        reader = PandasReader(sample_id_name="sample_id", match_id_name="id", dtype="float32")
+
+    fate_df = reader.to_frame(ctx, df)
+    return fate_df
+
+
+def execute_sbt_command(config, sbt_script_path, sbt_pkl_guest_path, sbt_pkl_host_path):
+    """
+    执行 SBT 脚本命令，检查执行结果，并加载 guest 和 host 的结果文件。
+
+    参数：
+    - config (dict): 配置字典，包含 `log_level` 等信息。
+    - sbt_script_path (str): SBT 脚本的路径。
+    - sbt_pkl_guest_path (str): guest 结果的 Pickle 文件路径。
+    - sbt_pkl_host_path (str): host 结果的 Pickle 文件路径。
+
+    返回：
+    - dict: 包含 guest 和 host 结果的字典。
+      格式为：{'guest': guest_result, 'host': host_result}
+    """
+    try:
+        # 构建命令
+        command = [
+            sys.executable,
+            sbt_script_path,
+            '--parties',
+            'guest:9999',
+            'host:10000',
+            '--log_level',
+            config['log_level']
+        ]
+        
+        # 使用 subprocess.run 执行命令
+        result = subprocess.run(command, capture_output=True, text=True)
+        
+        # 打印输出结果
+        print("Standard Output:", result.stdout)
+        print("Standard Error:", result.stderr)
+        
+        # 检查命令是否成功运行
+        if result.returncode != 0:
+            print("Command failed with return code:", result.returncode)
+            raise RuntimeError(f"Command execution failed with return code {result.returncode}")
+        
+        print("Command executed successfully.")
+        
+        # 加载 guest 和 host 的结果
+        guest_result = load_from_pkl(sbt_pkl_guest_path)
+        host_result = load_from_pkl(sbt_pkl_host_path)
+        
+        # 返回结果
+        return {
+            'guest': guest_result,
+            'host': host_result
+        }
+    except Exception as e:
+        print(f"An error occurred during command execution: {e}")
+        raise

@@ -10,10 +10,13 @@ DATASETS_PATH = os.path.join(ROOT_PATH, "datasets")
 CONFIGS_PATH = os.path.join(ROOT_PATH, "configs")
 SCRIPTS_PATH = os.path.join(ROOT_PATH, "scripts")
 
-A_host_path = os.path.join(DATASETS_PATH, 'A_host.csv')
-B_guest_path = os.path.join(DATASETS_PATH, 'B_guest.csv')
-SBT_CONFIGS_PATH = os.path.join(CONFIGS_PATH, "sbtConfig.yaml")
-SBT_PKL_PATH = os.path.join(DATASETS_PATH, 'sbt_result.pkl')
-SBT_SCRIPT_PATH = os.path.join(SCRIPTS_PATH, 'sbt.py')
+A_host_train_path = os.path.join(DATASETS_PATH, 'A_host_train.csv')
+B_guest_train_path = os.path.join(DATASETS_PATH, 'B_guest_train.csv')
+A_host_test_path = os.path.join(DATASETS_PATH, 'A_host_test.csv')
+B_guest_test_path = os.path.join(DATASETS_PATH, 'B_guest_test.csv')
 
+SBT_CONFIGS_PATH = os.path.join(CONFIGS_PATH, "sbtConfig.yaml")
+SBT_SCRIPT_PATH = os.path.join(SCRIPTS_PATH, 'sbt.py')
+SBT_PKL_GUEST_PATH = os.path.join(DATASETS_PATH, 'sbt_guest_result.pkl')
+SBT_PKL_HOST_PATH = os.path.join(DATASETS_PATH, 'sbt_host_result.pkl')
 TOTAL_COUNT = 5000

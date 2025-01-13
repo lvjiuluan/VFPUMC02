@@ -1,7 +1,7 @@
-num_trees: 3
+num_trees: 4
 max_depth: 3
 complete_secure: 0
 learning_rate: 0.2
-objective: 'binary:bce'
+objective: binary:bce
 num_class: 1
-log_level: 'ERROR'
+log_level: ERROR

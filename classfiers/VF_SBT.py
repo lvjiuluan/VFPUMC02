@@ -16,36 +16,13 @@ class VF_SBT(VF_BASE_CLF):
 
     def fit(self, XA, XB, y):
         A_df, B_df = fate_construct_df(XA, XB, y)
-        save_host_guest_dataframes(A_df, B_df, A_host_path, B_guest_path)
-        # 构建命令
-        command = [
-            sys.executable,
-            SBT_SCRIPT_PATH,
-            '--parties',
-            'guest:9999',
-            'host:10000',
-            '--log_level',
-            self.config['log_level']
-        ]
-        
-        # 使用subprocess.run来执行命令
-        result = subprocess.run(command, capture_output=True, text=True)
-        
-        # 打印输出结果
-        print("Standard Output:", result.stdout)
-        print("Standard Error:", result.stderr)
-        
-        # 检查命令是否成功运行
-        if result.returncode == 0:
-            print("Command executed successfully.")
-        else:
-            print("Command failed with return code:", result.returncode)
-        result = load_from_pkl(SBT_PKL_PATH)
-        self.result = result
+        save_host_guest_dataframes(A_df, B_df, A_host_train_path, B_guest_train_path)
         print("VF_SBT训练结束")
 
     def predict(self, XA, XB):
         pass
 
     def predict_proba(self, XA, XB):
-        pass
+        A_df, B_df = fate_construct_df(XA, XB)
+        save_host_guest_dataframes(A_df, B_df, A_host_test_path, B_guest_test_path)
+        execute_sbt_command(self.config)
