@@ -43,7 +43,7 @@ class VF_SBT(VF_BASE_CLF):
 
     def predict_proba(self, XA, XB):
         """
-        进行预测并返回预测概率。
+        进行预测并返回预测概率,多维数组，从0到C，每一列表示一类的概率
         """
         return self._execute_prediction(XA, XB, return_proba=True)
 
@@ -75,12 +75,14 @@ class VF_SBT(VF_BASE_CLF):
             if self.pred_df is None:
                 raise ValueError("预测数据框 `pred_df` 缺失。")
 
-            self.pred = self.pred_df.predict_score
+            self.predict_score = self.pred_df.predict_score
             self.predict_result = self.pred_df.predict_result
 
             self._is_fitted = True  # 标记模型已进行预测
 
-            return self.pred if return_proba else self.predict_result
+            self.y_proba = parse_probability_details(self.pred_df.predict_detail)
+
+            return self.y_proba if return_proba else self.predict_result
 
         except Exception as e:
             print(f"预测时发生错误: {e}")
