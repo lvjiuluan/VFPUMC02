@@ -3,5 +3,5 @@ max_depth: 3
 complete_secure: 0
 learning_rate: 0.2
 objective: binary:bce
-num_class: 1
+num_class: 2
 log_level: ERROR

@@ -10,6 +10,9 @@ import inspect
 from fate.arch.dataframe import PandasReader
 from consts.Constants import *
 from utils.pklUtils import *
+import ast
+import json
+
 
 def fate_construct_df(XA, XB, y=None):
     """
@@ -305,3 +308,35 @@ def execute_sbt_command(config):
     except Exception as e:
         print(f"An error occurred during command execution: {e}")
         raise
+
+
+def parse_probability_details(detail):
+    """
+    将包含字符串表示的字典的数组转换为一个二维numpy数组。
+    
+    参数:
+    detail -- numpy数组，每个元素是一个表示类别概率的字典的字符串。
+    C -- int，表示类别的数量。
+    
+    返回:
+    numpy数组，形状为(n, C)，其中n是detail的行数。
+    """
+    probabilities = []
+
+
+    # 从第一个元素推断类别数量
+    first_item = ast.literal_eval(json.loads(detail[0]))
+    C = len(first_item)  # 类别数量为字典的键的数量
+    
+    # 遍历detail数组中的每个元素
+    for item in detail:
+        # 将字符串表示的字典转换为真正的字典
+        prob_dict = ast.literal_eval(json.loads(item))
+        # 提取概率值并按类别顺序添加到列表
+        prob_values = [prob_dict[str(i)] for i in range(C)]
+        probabilities.append(prob_values)
+    
+    # 将列表转换为numpy数组
+    prob_array = np.array(probabilities)
+    
+    return prob_array

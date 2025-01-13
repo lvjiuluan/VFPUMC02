@@ -1,9 +1,9 @@
 import os
 
 # 不同平台跑，配置一下，项目的根路径
-ROOT_PATH = r'D:\PyCharmProjects\VFPUMC02'
+# ROOT_PATH = r'D:\PyCharmProjects\VFPUMC02'
 # ROOT_PATH = r'/root/semi/VFPUMC02'
-# ROOT_PATH = r'/root/VFPUMC02'
+ROOT_PATH = r'/root/VFPUMC02'
 
 # 下面的都是基于 ROOT_PATH
 DATASETS_PATH = os.path.join(ROOT_PATH, "datasets")
