@@ -88,3 +88,11 @@ REGRESSION_L2 = "regression:l2"
 ### 总结
 
 `HeteroSecureBoostGuest` 类中的这些参数主要用于控制模型的复杂度、训练过程的效率以及数据隐私和安全性。在纵向联邦学习环境下，数据分布在多个参与方之间，通过这些参数的设置，可以在保证数据隐私的前提下，高效地训练出性能良好的提升决策树模型。
+
+
+HeteroSecureBoostHost 类的默认参数： 
+num_trees=3
+max_depth=3
+complete_secure=0
+max_bin=32
+hist_sub=True
