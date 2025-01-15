@@ -77,6 +77,7 @@ class VF_SBT(VF_BASE_CLF):
 
             self.predict_score = self.pred_df.predict_score
             self.predict_result = self.pred_df.predict_result
+            self.y_pred = self.predict_result
 
             self._is_fitted = True  # 标记模型已进行预测
 
