@@ -1,0 +1,10 @@
+对于预估时间可能执行较长的单元格，不要在jupyter里面执行:
+1. 将jupyter转py文件, FateUtils下的convert_ipynb_to_py方法
+2. 假设第一步转为scr.py，在命令行窗口用python运行py文件，后台运行
+3. 安装screen，大多数linux系统都已经默认安装
+    sudo apt update
+    sudo apt install screen
+4. screen -S runSrc
+5. ctrl-a d   # 挂起当前会话
+6. screen -r runSrc # 恢复指定会话
+7. screen -S 1077.runScr -X quit # 删除会话

@@ -165,6 +165,7 @@ def save_df_to_csv(df: pd.DataFrame, file_path: str):
         print(f"保存 DataFrame 到 {file_path} 时发生错误：{e}")
         raise
 
+
 def load_host_guest_data(A_host_path: str, B_guest_path: str, skip_columns: list):
     """
     从两个 CSV 文件中加载数据，跳过指定的列，并返回特征和标签的 NumPy 数组。
@@ -229,7 +230,6 @@ def load_host_guest_data(A_host_path: str, B_guest_path: str, skip_columns: list
     return XA, XB, y
 
 
-
 def filter_params_for_class(cls, config):
     """
     过滤掉与类的构造函数无关的参数。
@@ -245,6 +245,7 @@ def filter_params_for_class(cls, config):
     filtered_config = {k: v for k, v in config.items() if k in constructor_params}
 
     return filtered_config
+
 
 def df_to_data(ctx, df, has_label=True):
     if has_label:
@@ -281,25 +282,25 @@ def execute_sbt_command(config):
             '--log_level',
             config['log_level']
         ]
-        
+
         # 使用 subprocess.run 执行命令
         result = subprocess.run(command, capture_output=True, text=True)
-        
+
         # 打印输出结果
         print("Standard Output:", result.stdout)
         print("Standard Error:", result.stderr)
-        
+
         # 检查命令是否成功运行
         if result.returncode != 0:
             print("Command failed with return code:", result.returncode)
             raise RuntimeError(f"Command execution failed with return code {result.returncode}")
-        
+
         print("Command executed successfully.")
-        
+
         # 加载 guest 和 host 的结果
         guest_result = load_from_pkl(SBT_PKL_GUEST_PATH)
         host_result = load_from_pkl(SBT_PKL_HOST_PATH)
-        
+
         # 返回结果
         return {
             'guest': guest_result,
@@ -323,11 +324,10 @@ def parse_probability_details(detail):
     """
     probabilities = []
 
-
     # 从第一个元素推断类别数量
     first_item = ast.literal_eval(json.loads(detail[0]))
     C = len(first_item)  # 类别数量为字典的键的数量
-    
+
     # 遍历detail数组中的每个元素
     for item in detail:
         # 将字符串表示的字典转换为真正的字典
@@ -335,8 +335,46 @@ def parse_probability_details(detail):
         # 提取概率值并按类别顺序添加到列表
         prob_values = [prob_dict[str(i)] for i in range(C)]
         probabilities.append(prob_values)
-    
+
     # 将列表转换为numpy数组
     prob_array = np.array(probabilities)
-    
+
     return prob_array
+
+
+def remove_file_extension(file_name, new_suffix='.py'):
+    """
+    去掉文件名后缀，并根据需要添加新的后缀。
+
+    :param file_name: 文件名字符串
+    :param new_suffix: 新的后缀（默认为 '.py'），如果为 None，则不添加新的后缀
+    :return: 去掉旧后缀并添加新后缀的文件名
+    """
+    # 去掉旧的后缀
+    if '.' in file_name:
+        base_name = file_name.rsplit('.', 1)[0]
+    else:
+        base_name = file_name
+
+    # 如果 new_suffix 不为 None，则拼接新的后缀
+    if new_suffix is not None:
+        if not new_suffix.startswith('.'):
+            new_suffix = '.' + new_suffix  # 确保后缀以 "." 开头
+        return base_name + new_suffix
+
+    # 如果 new_suffix 为 None，直接返回去掉后缀的文件名
+    return base_name
+
+
+def convert_ipynb_to_py(ipynb_file_name, py_file_name=None):
+    with open(ipynb_file_name, 'r', encoding='utf-8') as f:
+        notebook = json.load(f)
+
+    if py_file_name is None:
+        py_file_path = os.path.join(SCRIPTS_PATH, remove_file_extension(ipynb_file_name, new_suffix='.py'))
+    else:
+        py_file_path = os.path.join(SCRIPTS_PATH, py_file_name)
+    with open(py_file_path, 'w', encoding='utf-8') as f:
+        for cell in notebook['cells']:
+            if cell['cell_type'] == 'code':
+                f.write(''.join(cell['source']) + '\n\n')
