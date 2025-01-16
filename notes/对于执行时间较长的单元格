@@ -8,3 +8,17 @@
 5. ctrl-a d   # 挂起当前会话
 6. screen -r runSrc # 恢复指定会话
 7. screen -S 1077.runScr -X quit # 删除会话
+
+
+
+# screen 其他命令
+
+screen -d id # 挂起某个会话
+echo $STY # 查看当前会话名称
+screen -ls # 查看所有会话
+
+# 解决有多个会话attach
+如果有多个会话attach，用 screen -d id 命令挂起会话
+
+# 解决 There is no screen to be resumed matching
+直接用  screen -d id 命令挂起这个会话
