@@ -9,6 +9,7 @@ import yaml
 import inspect
 from fate.arch.dataframe import PandasReader
 from sklearn.datasets import load_breast_cancer, load_iris, load_diabetes
+from sklearn.model_selection import train_test_split
 
 from consts.Constants import *
 from enums.SbtObjective import SbtObjective
@@ -467,4 +468,15 @@ def get_data_by_objective(objective: SbtObjective):
         raise ValueError(f"Unsupported objective: {objective}")
 
     X, y = data.data, data.target
-    return X, y
+
+    # 计算需要拆分的索引（列的中间位置）
+    n_col = X.shape[1]
+    split_idx = n_col // 2  # 整数除法
+
+    # 划分 XA, XB
+    XA = X[:, :split_idx]
+    XB = X[:, split_idx:]
+
+    # 划分训练集和测试集
+    XA_train, XA_test, XB_train, XB_test, y_train, y_test = train_test_split(XA, XB, y, test_size=0.2, random_state=42)
+    return XA_train, XA_test, XB_train, XB_test, y_train, y_test
