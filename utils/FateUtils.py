@@ -373,6 +373,31 @@ def remove_file_extension(file_name, new_suffix='.py'):
 
 
 def convert_ipynb_to_py(ipynb_file_name, py_file_name=None):
+    """
+    将 Jupyter Notebook 文件 (.ipynb) 转换为 Python 脚本 (.py) 文件。
+
+    参数:
+        ipynb_file_name (str): 输入的 Jupyter Notebook 文件路径，必须是 .ipynb 文件。
+        py_file_name (str, 可选): 输出的 Python 脚本文件名。如果未提供该参数，
+                                  则会根据 `ipynb_file_name` 自动生成一个相应的 .py 文件名。
+
+    返回:
+        无返回值。此方法会将转换后的 Python 脚本保存在指定的路径中。
+
+    注意事项:
+        1. 该方法假定输入的 Jupyter Notebook 文件是有效的 JSON 格式。
+        2. 输出的 Python 脚本中仅包含代码单元（code cells）的内容，其他单元（如 markdown 单元）将被忽略。
+        3. 如果未提供 `py_file_name`，生成的 Python 文件名会基于 `ipynb_file_name` 的名称，
+           并保存在 `SCRIPTS_PATH` 目录中。
+        4. 需要确保 `SCRIPTS_PATH` 是有效的路径，且程序具有写入权限。
+
+    示例:
+        >>> convert_ipynb_to_py("example_notebook.ipynb", "example_script.py")
+        # 将 example_notebook.ipynb 转换为 example_script.py
+
+        >>> convert_ipynb_to_py("example_notebook.ipynb")
+        # 自动生成 example_notebook.py 文件，并保存在 SCRIPTS_PATH 目录下
+    """
     with open(ipynb_file_name, 'r', encoding='utf-8') as f:
         notebook = json.load(f)
 
@@ -384,7 +409,6 @@ def convert_ipynb_to_py(ipynb_file_name, py_file_name=None):
         for cell in notebook['cells']:
             if cell['cell_type'] == 'code':
                 f.write(''.join(cell['source']) + '\n\n')
-
 
 
 def determine_task_type(y: np.ndarray):
