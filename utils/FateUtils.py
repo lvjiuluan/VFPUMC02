@@ -9,10 +9,13 @@ import yaml
 import inspect
 from fate.arch.dataframe import PandasReader
 from consts.Constants import *
+from enums.SbtObjective import SbtObjective
+from utils.Logger import Logger
 from utils.pklUtils import *
 import ast
 import json
 
+logger = Logger.get_logger()
 
 def fate_construct_df(XA, XB, y=None):
     """
@@ -378,3 +381,67 @@ def convert_ipynb_to_py(ipynb_file_name, py_file_name=None):
         for cell in notebook['cells']:
             if cell['cell_type'] == 'code':
                 f.write(''.join(cell['source']) + '\n\n')
+
+
+
+def determine_task_type(y: np.ndarray):
+    """
+    根据给定的目标向量 y 判断当前任务类型（二分类、多分类或回归），
+    并返回对应的目标函数名称 (SbtObjective.value) 和类别数（回归任务为 None）。
+
+    参数:
+    --------
+    y : np.ndarray
+        目标向量，通常是一维数组。若属于分类任务，则应包含离散的整型标签，
+        若为回归任务，则可包含连续值或难以归为有限类别的值。
+
+    返回:
+    --------
+    objective_value : str
+        对应的目标函数名称，来自 SbtObjective 枚举的 value。
+    num_class : int or None
+        对于二分类和多分类任务，返回类别数量；对于回归任务，返回 None。
+
+    示例:
+    --------
+    >>> y_class_binary = np.array([0, 1, 0, 1])
+    >>> determine_task_type(y_class_binary)
+    ('binary:bce', 2)
+
+    >>> y_class_multi = np.array([0, 1, 2, 1, 3])
+    >>> determine_task_type(y_class_multi)
+    ('multi:ce', 4)
+
+    >>> y_reg = np.array([3.14, 2.71, 1.41, 2.0])
+    >>> determine_task_type(y_reg)
+    ('regression:l2', None)
+    """
+    # 去重后得到的唯一值
+    unique_values = np.unique(y)
+    num_unique = len(unique_values)
+
+    print(f"输入标签 y 的唯一值个数: {num_unique}, 唯一值: {unique_values}")
+
+    # 判断是否为整数类型（用于区分离散和连续）
+    # 你也可以根据具体业务需求进行更复杂的判断
+    if issubclass(y.dtype.type, np.integer):
+        if num_unique == 2:
+            print("检测到二分类任务 (Binary Classification)")
+            objective_value = SbtObjective.BINARY_BCE.value
+            num_class = 2
+        elif num_unique > 2:
+            print("检测到多分类任务 (Multi-class Classification)")
+            objective_value = SbtObjective.MULTI_CE.value
+            num_class = num_unique
+        else:
+            # num_unique == 1 或者其他极端情况
+            logger.warning("仅检测到 1 个唯一值，或未能判定为常见分类任务，默认回归处理")
+            objective_value = SbtObjective.REGRESSION_L2.value
+            num_class = None
+    else:
+        # 若不是整数类型，则默认回归处理
+        print("检测到回归任务 (Regression)")
+        objective_value = SbtObjective.REGRESSION_L2.value
+        num_class = None
+
+    return objective_value, num_class

@@ -1,4 +1,4 @@
-from classfiers.VF_BASE import VF_BASE_CLF
+from classfiers.VF_BASE import VF_BASE_CLF, VF_BASE_REG
 from utils.FateUtils import *
 from consts.Constants import *
 from utils.pklUtils import *
@@ -6,7 +6,7 @@ import subprocess
 import sys
 
 
-class VF_SBT(VF_BASE_CLF):
+class VF_SBT():
     def __init__(self, config):
         """
         初始化 VF_SBT 实例，加载并更新配置。
@@ -16,7 +16,6 @@ class VF_SBT(VF_BASE_CLF):
             sbt_config.update(config)
             self.config = sbt_config
             self.result = None
-            save_config(sbt_config, SBT_CONFIGS_PATH)
             self._is_fitted = False  # 更具描述性的变量名
         except Exception as e:
             print(f"初始化时发生错误: {e}")
@@ -27,6 +26,10 @@ class VF_SBT(VF_BASE_CLF):
         训练 SBT 模型。
         """
         try:
+            objective, num_class = determine_task_type(y)
+            self.config['objective'] = objective
+            self.config['num_class'] = num_class
+            save_config(self.config, SBT_CONFIGS_PATH)
             A_df, B_df = fate_construct_df(XA, XB, y)
             save_host_guest_dataframes(A_df, B_df, A_host_train_path, B_guest_train_path)
             print("VF_SBT训练结束")
@@ -88,3 +91,44 @@ class VF_SBT(VF_BASE_CLF):
         except Exception as e:
             print(f"预测时发生错误: {e}")
             raise
+
+class VF_SBT_CLF(VF_SBT, VF_BASE_CLF):
+    """
+    分类器类，继承自 VF_SBT_BASE 和 VF_BASE_CLF。
+    """
+
+    def fit(self, XA, XB, y):
+        """
+        调用基类的 fit 方法。
+        """
+        super().fit(XA, XB, y)
+
+    def predict(self, XA, XB):
+        """
+        调用基类的 _execute_prediction 方法。
+        """
+        return self._execute_prediction(XA, XB, return_proba=False)
+
+    def predict_proba(self, XA, XB):
+        """
+        调用基类的 _execute_prediction 方法。
+        """
+        return self._execute_prediction(XA, XB, return_proba=True)
+
+
+class VF_SBT_REG(VF_SBT, VF_BASE_REG):
+    """
+    回归器类，继承自 VF_SBT_BASE 和 VF_BASE_REG。
+    """
+
+    def fit(self, XA, XB, y):
+        """
+        调用基类的 fit 方法。
+        """
+        super().fit(XA, XB, y)
+
+    def predict(self, XA, XB):
+        """
+        调用基类的 _execute_prediction 方法。
+        """
+        return self._execute_prediction(XA, XB, return_proba=False)

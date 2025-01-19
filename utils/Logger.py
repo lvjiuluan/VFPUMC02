@@ -1,6 +1,7 @@
 import logging
 
 
+
 class Logger:
     """
     一个静态工具类，用于创建和获取 logger 对象，只输出日志到控制台。
