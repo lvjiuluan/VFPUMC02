@@ -17,6 +17,7 @@ class VF_SBT():
             self.config = sbt_config
             self.result = None
             self._is_fitted = False  # 更具描述性的变量名
+            self.objective = None
         except Exception as e:
             print(f"初始化时发生错误: {e}")
             raise
@@ -29,6 +30,7 @@ class VF_SBT():
             objective, num_class = determine_task_type(y)
             self.config['objective'] = objective
             self.config['num_class'] = num_class
+            self.objective = SbtObjective(objective)
             save_config(self.config, SBT_CONFIGS_PATH)
             A_df, B_df = fate_construct_df(XA, XB, y)
             save_host_guest_dataframes(A_df, B_df, A_host_train_path, B_guest_train_path)
@@ -84,13 +86,16 @@ class VF_SBT():
 
             self._is_fitted = True  # 标记模型已进行预测
 
-            self.y_proba = parse_probability_details(self.pred_df.predict_detail)
+            self.y_proba = None
+            if self.objective in {SbtObjective.BINARY_BCE, SbtObjective.MULTI_CE}:
+                self.y_proba = parse_probability_details(self.pred_df.predict_detail)
 
             return self.y_proba if return_proba else self.predict_result
 
         except Exception as e:
             print(f"预测时发生错误: {e}")
             raise
+
 
 class VF_SBT_CLF(VF_SBT, VF_BASE_CLF):
     """

@@ -447,17 +447,17 @@ def determine_task_type(y: np.ndarray):
     unique_values = np.unique(y)
     num_unique = len(unique_values)
 
-    print(f"输入标签 y 的唯一值个数: {num_unique}, 唯一值: {unique_values}")
-
     # 判断是否为整数类型（用于区分离散和连续）
     # 你也可以根据具体业务需求进行更复杂的判断
     if issubclass(y.dtype.type, np.integer):
         if num_unique == 2:
             print("检测到二分类任务 (Binary Classification)")
+            print(f"输入标签 y 的唯一值个数: {num_unique}, 唯一值: {unique_values}")
             objective_value = SbtObjective.BINARY_BCE.value
             num_class = 2
         elif num_unique > 2:
             print("检测到多分类任务 (Multi-class Classification)")
+            print(f"输入标签 y 的唯一值个数: {num_unique}, 唯一值: {unique_values}")
             objective_value = SbtObjective.MULTI_CE.value
             num_class = num_unique
         else:
