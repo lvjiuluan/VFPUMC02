@@ -480,3 +480,94 @@ def get_data_by_objective(objective: SbtObjective):
     # 划分训练集和测试集
     XA_train, XA_test, XB_train, XB_test, y_train, y_test = train_test_split(XA, XB, y, test_size=0.2, random_state=42)
     return XA_train, XA_test, XB_train, XB_test, y_train, y_test
+
+
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score,
+    f1_score, confusion_matrix, roc_auc_score,
+    classification_report, mean_squared_error,
+    mean_absolute_error, r2_score, explained_variance_score
+)
+
+def evaluate_model(y_true, y_pred, y_proba=None, task='classification'):
+    """
+    根据任务类型（分类或回归）打印模型评估指标。
+
+    参数：
+    ----------
+    y_true : array-like
+        真实标签（分类任务）或真实值（回归任务）。
+    y_pred : array-like
+        分类任务：预测的离散标签；
+        回归任务：预测的数值结果。
+    y_proba : array-like, 可选
+        在分类任务下，预测的概率值（通常是正类的概率或多类概率）。
+        当需要计算 ROC AUC 等基于概率的指标时，需要此参数。
+        回归任务无需此参数。
+    task : str, 可选
+        指定任务类型，可选 'classification' 或 'regression'，默认 'classification'。
+    """
+
+    if task == 'classification':
+        print("\n========== Classification Metrics ==========")
+
+        # --------------------
+        # 1. 基础分类指标
+        # --------------------
+        acc = accuracy_score(y_true, y_pred)
+        pre_macro = precision_score(y_true, y_pred, average='macro', zero_division=0)
+        rec_macro = recall_score(y_true, y_pred, average='macro', zero_division=0)
+        f1_macro = f1_score(y_true, y_pred, average='macro', zero_division=0)
+
+        print(f"Accuracy         : {acc:.4f}")
+        print(f"Precision (macro): {pre_macro:.4f}")
+        print(f"Recall (macro)   : {rec_macro:.4f}")
+        print(f"F1 (macro)       : {f1_macro:.4f}")
+
+        # --------------------
+        # 2. 混淆矩阵
+        # --------------------
+        cm = confusion_matrix(y_true, y_pred)
+        print("\nConfusion Matrix:")
+        print(cm)
+
+        # --------------------
+        # 3. ROC AUC
+        # --------------------
+        # 如果需要并且提供了预测概率，可以计算二分类或多分类的 ROC AUC
+        if y_proba is not None:
+            try:
+                # 对二分类情况，可直接计算
+                # 若是多分类，可指定 multi_class='ovr' 或 'ovo' 并传入相应格式的 y_proba
+                auc_score = roc_auc_score(y_true, y_proba)
+                print(f"\nROC AUC          : {auc_score:.4f}")
+            except ValueError:
+                print("\nROC AUC          : 无法计算（可能是多分类且未指定multi_class）")
+
+        # --------------------
+        # 4. Classification Report
+        # --------------------
+        print("\nClassification Report:")
+        cls_report = classification_report(y_true, y_pred, zero_division=0)
+        print(cls_report)
+
+    elif task == 'regression':
+        print("\n========== Regression Metrics ==========")
+
+        # --------------------
+        # 1. 回归指标
+        # --------------------
+        mse_val = mean_squared_error(y_true, y_pred)
+        rmse_val = np.sqrt(mse_val)
+        mae_val = mean_absolute_error(y_true, y_pred)
+        r2_val = r2_score(y_true, y_pred)
+        evs_val = explained_variance_score(y_true, y_pred)
+
+        print(f"MSE               : {mse_val:.4f}")
+        print(f"RMSE              : {rmse_val:.4f}")
+        print(f"MAE               : {mae_val:.4f}")
+        print(f"R^2 (Coefficient) : {r2_val:.4f}")
+        print(f"Explained Variance: {evs_val:.4f}")
+
+    else:
+        raise ValueError("task 参数必须是 'classification' 或 'regression'。")
