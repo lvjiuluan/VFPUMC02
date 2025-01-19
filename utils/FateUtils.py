@@ -8,6 +8,8 @@ from fate.arch.context import create_context
 import yaml
 import inspect
 from fate.arch.dataframe import PandasReader
+from sklearn.datasets import load_breast_cancer, load_iris, load_diabetes
+
 from consts.Constants import *
 from enums.SbtObjective import SbtObjective
 from utils.Logger import Logger
@@ -445,3 +447,24 @@ def determine_task_type(y: np.ndarray):
         num_class = None
 
     return objective_value, num_class
+
+
+
+def get_data_by_objective(objective: SbtObjective):
+    """
+    根据给定的枚举类型 (objective)，返回对应的 X, y 数据。
+    - BINARY_BCE: 使用乳腺癌数据集 (二分类)
+    - MULTI_CE: 使用鸢尾花数据集 (多分类)
+    - REGRESSION_L2: 使用糖尿病数据集 (回归)
+    """
+    if objective == SbtObjective.BINARY_BCE:
+        data = load_breast_cancer()
+    elif objective == SbtObjective.MULTI_CE:
+        data = load_iris()
+    elif objective == SbtObjective.REGRESSION_L2:
+        data = load_diabetes()
+    else:
+        raise ValueError(f"Unsupported objective: {objective}")
+
+    X, y = data.data, data.target
+    return X, y
