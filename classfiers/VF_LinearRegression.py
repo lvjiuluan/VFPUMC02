@@ -199,6 +199,7 @@ class Client:
         target_client.data.update(data)
 
 
+
 class ClientA(Client):
     """
     ClientA 通常用于存储并管理部分特征矩阵 X，以及在训练过程中维护自己的模型权重。
@@ -390,7 +391,7 @@ class ClientA(Client):
         logger.info(f"A方: 完成模型参数更新，新的 weights = {self.weights}")
 
         # 控制台输出（可酌情在生产环境中关闭或记录为 debug）
-        logger.info("A weights : {}".format(self.weights))
+        logger.info(f"A weights : {self.weights}")
 
 
 class ClientB(Client):
@@ -612,7 +613,7 @@ class ClientB(Client):
         logger.info(f"B方: 完成模型参数更新，新的 weights = {self.weights}")
 
         # 控制台输出（可酌情在生产环境中关闭或记录为 debug）
-        logger.info("B weights : {}".format(self.weights))
+        logger.info(f"B weights : {self.weights}")
 
 
 class ClientC(Client):
