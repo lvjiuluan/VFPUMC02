@@ -539,3 +539,29 @@ def find_rounds_math(n: int, k: float, r: int) -> int:
     p = math.log(r / n) / math.log(1 - k)
     p = math.ceil(p)
     return p
+
+def split_labeled_unlabeled(X, y, k):
+    # 创建副本以避免修改原数据
+    X_copy = X.copy()
+    y_copy = y.copy()
+
+    # 获取样本总数
+    total_samples = len(y)
+
+    # 计算有标签样本的数量
+    labeled_samples = int(total_samples * k)
+
+    # 随机选择labeled_samples个索引
+    idx_labeled = np.random.choice(total_samples, labeled_samples, replace=False)
+
+    # 分离出有标签和无标签的样本
+    X_L = X_copy[idx_labeled]
+    y_L = y_copy[idx_labeled]
+    X_U = np.delete(X_copy, idx_labeled, axis=0)
+    y_U = np.delete(y_copy, idx_labeled, axis=0)
+
+    # 打印切分后数据的形状
+    print("Shape of Labeled Data (X_L, y_L):", X_L.shape, y_L.shape)
+    print("Shape of Unlabeled Data (X_U, y_U):", X_U.shape, y_U.shape)
+
+    return X_L, y_L, X_U, y_U

@@ -9,7 +9,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-class TwoStep():
+class TwoStep:
     def __init__(self, base_classifier, base_regressor, max_iter, k):
         """
         初始化 TwoStep 类。
