@@ -541,27 +541,50 @@ def find_rounds_math(n: int, k: float, r: int) -> int:
     return p
 
 def split_labeled_unlabeled(X, y, k):
-    # 创建副本以避免修改原数据
-    X_copy = X.copy()
-    y_copy = y.copy()
+    """
+    切分数据集，将一定比例k的样本用于训练（有标签数据），
+    其余作为无标签数据。
 
-    # 获取样本总数
-    total_samples = len(y)
+    参数:
+    X -- 特征数据 (numpy array)
+    y -- 标签数据 (numpy array)
+    k -- 有标签数据的比例 (0 到 1)
 
-    # 计算有标签样本的数量
-    labeled_samples = int(total_samples * k)
+    返回:
+    X_L -- 有标签样本的特征 (numpy array)
+    y_L -- 有标签样本的标签 (numpy array)
+    X_U -- 无标签样本的特征 (numpy array)
+    y_U -- 无标签样本的标签 (numpy array)
+    """
 
-    # 随机选择labeled_samples个索引
-    idx_labeled = np.random.choice(total_samples, labeled_samples, replace=False)
+    # 确保k在合理范围内
+    if not (0 <= k <= 1):
+        raise ValueError("k应该在0到1之间")
 
-    # 分离出有标签和无标签的样本
-    X_L = X_copy[idx_labeled]
-    y_L = y_copy[idx_labeled]
-    X_U = np.delete(X_copy, idx_labeled, axis=0)
-    y_U = np.delete(y_copy, idx_labeled, axis=0)
+    # 获取数据的总样本数量
+    total_samples = X.shape[0]
+    labeled_samples_count = int(total_samples * k)
 
-    # 打印切分后数据的形状
-    print("Shape of Labeled Data (X_L, y_L):", X_L.shape, y_L.shape)
-    print("Shape of Unlabeled Data (X_U, y_U):", X_U.shape, y_U.shape)
+    # 打印初始数据的形状
+    print(f"原始数据 X 形状: {X.shape}")
+    print(f"原始标签 y 形状: {y.shape}")
+    print(f"选择 {labeled_samples_count} 个样本作为有标签数据，剩余样本作为无标签数据")
+
+    # 随机选择索引来进行切分
+    indices = np.random.permutation(total_samples)
+    labeled_indices = indices[:labeled_samples_count]
+    unlabeled_indices = indices[labeled_samples_count:]
+
+    # 切分数据和标签
+    X_L = X[labeled_indices]
+    y_L = y[labeled_indices]
+    X_U = X[unlabeled_indices]
+    y_U = y[unlabeled_indices]
+
+    # 打印切分后的数据形状
+    print(f"有标签数据 X_L 形状: {X_L.shape}")
+    print(f"有标签数据 y_L 形状: {y_L.shape}")
+    print(f"无标签数据 X_U 形状: {X_U.shape}")
+    print(f"无标签数据 y_U 形状: {y_U.shape}")
 
     return X_L, y_L, X_U, y_U
