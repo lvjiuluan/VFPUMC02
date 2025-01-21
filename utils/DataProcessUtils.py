@@ -407,7 +407,7 @@ def get_top_k_percent_idx_without_confidence(scores, k, pick_lowest=False):
     return idx_partition
 
 
-def get_top_k_percent_idx(scores, k, pick_lowest=False, min_confidence=0.0):
+def get_top_k_percent_idx(scores, k, pick_lowest=False, min_confidence=None):
     """
     从分数数组中选出前 k% 的索引。
 
@@ -427,6 +427,8 @@ def get_top_k_percent_idx(scores, k, pick_lowest=False, min_confidence=0.0):
     np.ndarray
         选出样本的索引数组。
     """
+    if min_confidence is None:
+        return get_top_k_percent_idx_without_confidence(scores, k, pick_lowest)
 
     # 先根据 min_confidence 剔除低置信度样本
     valid_mask = scores >= min_confidence
@@ -512,3 +514,28 @@ def split_data_into_labeled_and_unlabeled(X, y, hidden_rate=0.1, random_state=No
     print(f"y_U_orig[:5]: {y_U_orig[:5]}")
 
     return X_L, y_L, X_U, y_U_orig
+
+
+import math
+
+
+def find_rounds_math(n: int, k: float, r: int) -> int:
+    """
+    数学公式法求解所需轮数。
+    :param n: 初始样本数（整数）
+    :param k: 抽取比例，0 < k < 1（浮点数）
+    :param r: 希望最终剩下的样本数
+    :return: 最终所需轮数 p
+    """
+    if r >= n:
+        # 如果 r >= n, 说明不需要抽取即可满足
+        return 0
+
+    if not (0 < k < 1):
+        raise ValueError("k 必须在 (0,1) 之间。")
+
+    # 直接套用推导公式 p = ceil( log(r/n) / log(1-k) )
+    # 注意：log(1 - k) < 0，所以这个值会是负的；要取 ceil。
+    p = math.log(r / n) / math.log(1 - k)
+    p = math.ceil(p)
+    return p

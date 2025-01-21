@@ -12,27 +12,42 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class VF_TwoStep:
 
-    def __init__(self, clf, k=0.1, max_iter=10, min_confidence=0.0, convergence_threshold=1):
+    def __init__(self, clf, reg, k=0.1, max_iter=10, min_confidence=None, convergence_threshold=1):
         """
         初始化 VF_TwoStep 类。
 
         参数:
         ----------
-        clf : object
-            纵向联邦分类器，需实现 .fit(XA, XB, y) 和 .predict_proba(XA, XB) / .predict(XA, XB) 方法。
+        clf : VF_BASE_CLF 的子类实例
+            用于分类任务的分类器，必须是 VF_BASE_CLF 的子类。
+        reg : VF_BASE_REG 的子类实例
+            用于回归任务的回归器，必须是 VF_BASE_REG 的子类。
         k : float, default=0.1
             每次迭代选出置信度最高的 k% 未标注数据进行自训练。
+            取值范围为 (0, 1]。
         max_iter : int, default=10
-            自训练最大迭代次数。
+            自训练的最大迭代次数，必须为正整数。
         min_confidence : float, default=0.0
-            用于筛选样本的最低置信度阈值。
+            用于筛选样本的最低置信度阈值，必须为非负数。
         convergence_threshold : int, default=1
-            当本轮选出的高置信度样本数不足该阈值时，提前停止。
+            当本轮选出的高置信度样本数不足该阈值时，提前停止迭代。
+            必须为正整数。
+
+        异常:
+        ----------
+        ValueError:
+            当参数不符合要求时抛出 ValueError。
         """
-        # 校验 clf 是否符合要求
-        if not hasattr(clf, "fit") or not hasattr(clf, "predict_proba"):
-            raise TypeError(
-                f"clf 必须实现 .fit() 和 .predict_proba() 方法，但接收到的类型是 {type(clf).__name__}。"
+        # 校验 clf 是否为 VF_BASE_CLF 的子类实例
+        if not isinstance(clf, VF_BASE_CLF):
+            raise ValueError(
+                f"clf 必须是 VF_BASE_CLF 的子类实例，但接收到的类型是 {type(clf).__name__}。"
+            )
+
+        # 校验 reg 是否为 VF_BASE_REG 的子类实例
+        if not isinstance(reg, VF_BASE_REG):
+            raise ValueError(
+                f"reg 必须是 VF_BASE_REG 的子类实例，但接收到的类型是 {type(reg).__name__}。"
             )
 
         # 校验 k 是否在 (0, 1] 范围内
@@ -61,6 +76,7 @@ class VF_TwoStep:
 
         # 初始化参数
         self.clf = clf
+        self.reg = reg
         self.k = k
         self.max_iter = max_iter
         self.min_confidence = min_confidence
@@ -69,8 +85,8 @@ class VF_TwoStep:
 
         # 打印初始化日志
         logging.info(
-            "VF_TwoStep 类已成功初始化: max_iter=%d, k=%.2f, min_confidence=%.2f, convergence_threshold=%d, clf=%s",
-            max_iter, k, min_confidence, convergence_threshold, type(clf).__name__
+            "VF_TwoStep 类已成功初始化: max_iter=%d, k=%.2f, min_confidence=%.2f, convergence_threshold=%d, clf=%s, reg=%s",
+            max_iter, k, min_confidence, convergence_threshold, type(clf).__name__, type(reg).__name__
         )
 
     def fit(self, XA_L, XB_L, y_L, XA_U, XB_U):
@@ -256,3 +272,6 @@ class VF_TwoStep:
             self.pred[unlabeled_indices] = final_pred
 
         logging.info("[DONE] 所有未标注样本的预测任务完成！(self.pred 已更新)")
+
+    def __fit__reg(self, XA_L, XB_L, y_L, XA_U, XB_U):
+        pass
