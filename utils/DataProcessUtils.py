@@ -529,7 +529,9 @@ def find_rounds_math(n: int, k: float, r: int) -> int:
     """
     p = 0
     while n > r:
-        n = n - n * k
+        # 计算要删除的样本数，确保至少删除一个样本
+        num_to_remove = max(1, int(n * k))
+        n -= num_to_remove
         p += 1
     return p
 
