@@ -535,6 +535,7 @@ def find_rounds_math(n: int, k: float, r: int) -> int:
         p += 1
     return p
 
+
 def split_labeled_unlabeled(X, y, k):
     """
     切分数据集，将一定比例k的样本用于训练（有标签数据），
@@ -646,6 +647,64 @@ def split_labeled_unlabeled_with_2_labels(X, y_C, y_R, k):
 
     return X_L, y_C_L, y_R_L, X_U, y_C_U, y_R_U
 
+def split_labeled_unlabeled(*arrays, k, random_state=None):
+    """
+    切分数据集，将一定比例 k 的样本用于训练（有标签数据），
+    其余作为无标签数据。
+
+    参数:
+    *arrays -- 任意数量的输入数组（numpy array），所有数组的长度必须相同。
+    k -- 有标签数据的比例 (0 到 1)。
+    random_state -- 随机种子，用于结果复现 (默认: None)。
+
+    返回:
+    labeled_arrays -- 切分后的有标签数据（列表）。
+    unlabeled_arrays -- 切分后的无标签数据（列表）。
+    """
+    # 检查 k 是否在合理范围内
+    if not (0 <= k <= 1):
+        raise ValueError("k 应该在 0 到 1 之间")
+
+    # 检查是否有输入数组
+    if len(arrays) == 0:
+        raise ValueError("至少需要一个输入数组")
+
+    # 检查所有数组的长度是否一致
+    array_lengths = [arr.shape[0] for arr in arrays]
+    if len(set(array_lengths)) != 1:
+        raise ValueError("所有输入数组的长度必须一致")
+
+    # 获取样本总数
+    total_samples = array_lengths[0]
+
+    # 设置随机种子（如果提供）
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    # 计算有标签样本的数量
+    labeled_samples_count = int(total_samples * k)
+
+    # 打印初始数据的形状
+    print(f"总样本数: {total_samples}")
+    for i, arr in enumerate(arrays):
+        print(f"输入数组 {i} 的形状: {arr.shape}")
+    print(f"选择 {labeled_samples_count} 个样本作为有标签数据，剩余样本作为无标签数据")
+
+    # 随机打乱索引
+    indices = np.random.permutation(total_samples)
+    labeled_indices = indices[:labeled_samples_count]
+    unlabeled_indices = indices[labeled_samples_count:]
+
+    # 切分数据
+    labeled_arrays = [arr[labeled_indices] for arr in arrays]
+    unlabeled_arrays = [arr[unlabeled_indices] for arr in arrays]
+
+    # 打印切分后的数据形状
+    for i, (labeled, unlabeled) in enumerate(zip(labeled_arrays, unlabeled_arrays)):
+        print(f"输入数组 {i} 的有标签数据形状: {labeled.shape}")
+        print(f"输入数组 {i} 的无标签数据形状: {unlabeled.shape}")
+
+    return labeled_arrays, unlabeled_arrays
 
 def vertical_split_array(X, random_state=None, first_col_rate=0.5):
     """
@@ -693,5 +752,7 @@ def vertical_split_array(X, random_state=None, first_col_rate=0.5):
     XA = X[:, XA_indices]
     XB = X[:, XB_indices]
 
+    print(f"切分后XA的形状为{XA.shape}")
+    print(f"切分后XB的形状为{XB.shape}")
 
     return XA, XB
