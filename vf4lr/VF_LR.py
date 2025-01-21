@@ -39,7 +39,7 @@ class VF_LR(VF_BASE_CLF):
         预测结果的概率分布，多列表示不同类别的概率。
     """
 
-    def __init__(self, learning_rate=3, epoch_num=5, batch_size=64):
+    def __init__(self, learning_rate=0.2, epoch_num=5, batch_size=64):
         """
         初始化 VF_LR 模型。
 

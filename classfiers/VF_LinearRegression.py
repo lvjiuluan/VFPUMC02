@@ -197,10 +197,6 @@ class Client:
             return
 
         target_client.data.update(data)
-        logger.info("发送数据完成：%s -> %s，发送内容：%s",
-                         self.__class__.__name__,
-                         target_client.__class__.__name__,
-                         data)
 
 
 class ClientA(Client):
