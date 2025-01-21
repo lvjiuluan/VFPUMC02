@@ -11,6 +11,7 @@ from enums.HideRatio import HideRatio
 # 配置日志记录
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 class DataSet:
     def __init__(self, baseFileName):
         self.baseFileName = baseFileName
@@ -20,6 +21,13 @@ class DataSet:
         self.y = self.df.iloc[:, -1]
         logging.info(f"数据集 {self.csvFileName} 加载完成，数据集形状为 {self.df.shape}")
 
+    def get_data(self):
+        df = self.df
+        # 分离特征矩阵和标签向量
+        X = df.iloc[:, :-1]  # 除最后一列外的所有列
+        y = df.iloc[:, -1]  # 最后一列
+
+        return X, y
 
     def get_train_X_y(self):
         return self.df.values.copy(), self.hidden_y.values.copy()
@@ -81,8 +89,10 @@ class DataSet:
         if hasattr(self, 'hidden_y') and self.hidden_y is not None:
             num_hidden = (self.hidden_y == -1).sum()
             num_rest = len(self.hidden_y) - num_hidden
-            logging.info(f"标签y总数量为：{len(self.hidden_y)}, 隐藏标签的数量为：{num_hidden}，比例为 {round(num_hidden / len(self.hidden_y), 2)}")
-            logging.info(f"有标签的数量为：{num_rest}, 标签为1的数量为：{(self.hidden_y == 1).sum()}, 标签为0的数量为：{(self.hidden_y == 0).sum()}")
+            logging.info(
+                f"标签y总数量为：{len(self.hidden_y)}, 隐藏标签的数量为：{num_hidden}，比例为 {round(num_hidden / len(self.hidden_y), 2)}")
+            logging.info(
+                f"有标签的数量为：{num_rest}, 标签为1的数量为：{(self.hidden_y == 1).sum()}, 标签为0的数量为：{(self.hidden_y == 0).sum()}")
 
         if hasattr(self, 'df') and self.df is not None and not self.df.empty:
             logging.info(f"数据集的形状为: {self.df.shape}")
@@ -127,6 +137,7 @@ class DataSet:
 
         return hidden_positive_count
 
+
 class BankDataset(DataSet):
     def __init__(self):
         super().__init__("bank")
@@ -143,4 +154,4 @@ class CreditDataset(DataSet):
 
 
 def get_all_dataset():
-    return [BankDataset(),CensusDataset(),CreditDataset()]
+    return [BankDataset(), CensusDataset(), CreditDataset()]
