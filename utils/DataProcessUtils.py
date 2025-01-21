@@ -585,24 +585,24 @@ def split_labeled_unlabeled(X, y, k):
     return X_L, y_L, X_U, y_U
 
 
-def split_labeled_unlabeled_with_2_labels(X, y1, y2, k):
+def split_labeled_unlabeled_with_2_labels(X, y_C, y_R, k):
     """
     切分数据集，将一定比例k的样本用于训练（有标签数据），
     其余作为无标签数据。
 
     参数:
     X -- 特征数据 (numpy array)
-    y1 -- 标签数据1 (numpy array)
-    y2 -- 标签数据2 (numpy array)
+    y_C -- 分类标签数据 (numpy array)
+    y_R -- 回归标签数据 (numpy array)
     k -- 有标签数据的比例 (0 到 1)
 
     返回:
     X_L -- 有标签样本的特征 (numpy array)
-    y1_L -- 有标签样本的标签1 (numpy array)
-    y2_L -- 有标签样本的标签2 (numpy array)
+    y_C_L -- 有标签样本的分类标签 (numpy array)
+    y_R_L -- 有标签样本的回归标签 (numpy array)
     X_U -- 无标签样本的特征 (numpy array)
-    y1_U -- 无标签样本的标签1 (numpy array)
-    y2_U -- 无标签样本的标签2 (numpy array)
+    y_C_U -- 无标签样本的分类标签 (numpy array)
+    y_R_U -- 无标签样本的回归标签 (numpy array)
     """
 
     # 确保k在合理范围内
@@ -611,15 +611,16 @@ def split_labeled_unlabeled_with_2_labels(X, y1, y2, k):
 
     # 获取数据的总样本数量
     total_samples = X.shape[0]
-    if y1.shape[0] != total_samples or y2.shape[0] != total_samples:
-        raise ValueError("X, y1 和 y2 的样本数量必须一致")
+    if y_C.shape[0] != total_samples or y_R.shape[0] != total_samples:
+        raise ValueError("X, y_C 和 y_R 的样本数量必须一致")
 
+    # 计算有标签样本的数量
     labeled_samples_count = int(total_samples * k)
 
     # 打印初始数据的形状
     print(f"原始数据 X 形状: {X.shape}")
-    print(f"原始标签 y1 形状: {y1.shape}")
-    print(f"原始标签 y2 形状: {y2.shape}")
+    print(f"原始分类标签 y_C 形状: {y_C.shape}")
+    print(f"原始回归标签 y_R 形状: {y_R.shape}")
     print(f"选择 {labeled_samples_count} 个样本作为有标签数据，剩余样本作为无标签数据")
 
     # 随机选择索引来进行切分
@@ -629,18 +630,18 @@ def split_labeled_unlabeled_with_2_labels(X, y1, y2, k):
 
     # 切分数据和标签
     X_L = X[labeled_indices]
-    y1_L = y1[labeled_indices]
-    y2_L = y2[labeled_indices]
+    y_C_L = y_C[labeled_indices]
+    y_R_L = y_R[labeled_indices]
     X_U = X[unlabeled_indices]
-    y1_U = y1[unlabeled_indices]
-    y2_U = y2[unlabeled_indices]
+    y_C_U = y_C[unlabeled_indices]
+    y_R_U = y_R[unlabeled_indices]
 
     # 打印切分后的数据形状
     print(f"有标签数据 X_L 形状: {X_L.shape}")
-    print(f"有标签数据 y1_L 形状: {y1_L.shape}")
-    print(f"有标签数据 y2_L 形状: {y2_L.shape}")
+    print(f"有标签数据 y_C_L 形状: {y_C_L.shape}")
+    print(f"有标签数据 y_R_L 形状: {y_R_L.shape}")
     print(f"无标签数据 X_U 形状: {X_U.shape}")
-    print(f"无标签数据 y1_U 形状: {y1_U.shape}")
-    print(f"无标签数据 y2_U 形状: {y2_U.shape}")
+    print(f"无标签数据 y_C_U 形状: {y_C_U.shape}")
+    print(f"无标签数据 y_R_U 形状: {y_R_U.shape}")
 
-    return X_L, y1_L, y2_L, X_U, y1_U, y2_U
+    return X_L, y_C_L, y_R_L, X_U, y_C_U, y_R_U
