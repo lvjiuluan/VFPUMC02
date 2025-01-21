@@ -316,27 +316,26 @@ class VF_TwoStep:
                 break
 
             # 1. 训练分类器
-            logging.info("[STEP 1] 开始训练分类器 (基于 %d 个 Labeled 样本)...", len(XA_L))
-            clf_start_time = time.time()
+            logging.info("[STEP 1] 开始训练回归器 (基于 %d 个 Labeled 样本)...", len(XA_L))
+            reg_start_time = time.time()
             self.clf.fit(XA_L, XB_L, y_L)
-            clf_time = time.time() - clf_start_time
-            logging.info("[STEP 1] 分类器训练完成，耗时 %.2f 秒。", clf_time)
+            clf_time = time.time() - reg_start_time
+            logging.info("[STEP 1] 回归器训练完成，耗时 %.2f 秒。", clf_time)
 
-            # 打印一下分类器识别到的类别信息(若有)
-            if hasattr(self.clf, 'classes_'):
-                logging.debug("[DEBUG] 分类器识别的类别列表: %s", self.clf.classes_)
-            else:
-                logging.debug("[DEBUG] 分类器无 'classes_' 属性，无法输出类别列表。")
 
             # 2. 对 Unlabeled 数据打分
-            logging.info("[STEP 2] 对 Unlabeled 数据进行预测概率计算...")
+            logging.info("[STEP 2] 对 Unlabeled 数据进行置信度打分...")
             scores_start_time = time.time()
-            proba = self.reg.predict(XA_U, XB_U)
-            # 取预测概率中最大的值作为该样本的置信度
-            scores = proba.max(axis=1)
+            predictions = self.reg.predict(XA_U, XB_U)
+            mean_prediction = np.mean(predictions)
+            std_prediction = np.std(predictions)
+            # 计算每个预测值的 Z 分数（标准化偏离程度）
+            scores = np.abs((predictions - mean_prediction) / std_prediction)
             scores_time = time.time() - scores_start_time
-            logging.info("[STEP 2] 预测概率计算完成，耗时 %.2f 秒。", scores_time)
-            logging.debug("[DEBUG] 置信度分数统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
+            logging.info("完成置信度打分，耗时 %.2f 秒。", scores_time)
+            logging.debug("预测值统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
+                          predictions.min(), predictions.max(), predictions.mean(), predictions.std())
+            logging.debug("置信度分数统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
                           scores.min(), scores.max(), scores.mean(), scores.std())
 
             # 3. 选出最高置信度的那部分数据
@@ -357,12 +356,13 @@ class VF_TwoStep:
 
             # 4. 得到这部分数据的预测标签
             logging.info("[STEP 4] 获取高置信度样本的预测标签。")
-            best_pred = self.clf.predict(XA_U, XB_U)[idx]
+            best_pred = predictions[idx]
             logging.debug("[DEBUG] 高置信度样本的预测标签分布: %s",
                           np.unique(best_pred, return_counts=True))
 
             # 将 self.pred 对应位置赋值为 best_pred
             self.pred_reg[selected_original_idx] = best_pred
+            logging.debug("更新 self.pred 的值。")
 
             # 5. 将这些样本移动到 Labeled 集合中
             logging.info("[STEP 5] 合并高置信度样本至 Labeled 集...")
