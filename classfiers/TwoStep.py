@@ -166,8 +166,8 @@ class TwoStep:
             logging.debug("最终预测标签分布: %s", np.unique(final_pred, return_counts=True))
             # 将最终剩余未标记数据的预测结果，映射回对应的 self.pred 索引
             self.pred_clf[unlabeled_indices] = final_pred
-            # 修改为int类型,只针对预测类型
-            self.pred_clf = self.pred_clf.astype('int64')
+            # 修改为int类型，只针对预测类型
+            self.pred_clf = self.pred_clf.astype('int')
 
     def __fit__reg(self, X_L, y_L, X_U):
         """

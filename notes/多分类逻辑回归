@@ -1,0 +1,133 @@
+下面给出一个典型的示例实现，采用了 **One-vs-Rest**(OvR) 思路，将多分类问题拆分成若干个二分类问题，每个类别对应一个二分类器（这里直接用你已有的 `VF_LR` 来做二分类）。整体流程如下：
+
+1. **fit** 阶段
+   - 找出数据集中的所有类别 `self.classes_`。
+   - 对于每一个类别 `cls`，构造一个二分类训练集：标签为该类别的样本设为1，否则设为0。
+   - 训练出一个 `VF_LR` 分类器。
+   - 将所有 “类别 → 对应的二分类器” 存下来，供预测阶段使用。
+
+2. **predict_proba** 阶段
+   - 依次调用每个子分类器的 `predict_proba`，拿到“是该类别”的概率（即 `[:, 1]` 这一列）。
+   - 将这些概率拼成形如 `(样本数, 类别数)` 的矩阵，记为 `all_probas`。
+   - 如果需要，可以对 `all_probas` 做归一化处理，使每一行的概率和为 1；不过在 One-vs-Rest 场景下是否进行归一化，会视具体需求而定。
+
+3. **predict** 阶段
+   - 根据 `predict_proba` 的输出，找出每个样本中概率最大的那个类别的索引，再映射回实际类别标签。
+
+下面是一段可参考的示例代码（假设 `VF_LR` 已经可以正常处理二分类逻辑回归），你可根据自己项目中的数据结构和需求做修改：
+
+```python
+import numpy as np
+from abc import ABC
+from .vf_base_clf import VF_BASE_CLF
+from .vf_lr import VF_LR  # 你已有的二分类纵向逻辑回归
+
+class VF_LR_MC(VF_BASE_CLF, ABC):
+    """
+    多分类版本的纵向逻辑回归。
+    采用 One-vs-Rest 思路，将每个类别都训练一个二分类器。
+    """
+    def __init__(self):
+        super().__init__()
+        # 保存所有的二分类器
+        # 例如: { 类别A: clf_A, 类别B: clf_B, ... }
+        self.classifiers_ = {}
+        # 保存数据集中所有类别
+        self.classes_ = None
+
+    def fit(self, XA, XB, y):
+        """
+        训练多分类模型。
+
+        参数:
+        - XA: 特征集 A。
+        - XB: 特征集 B。
+        - y: 标签(多类别)。
+        """
+        # 1. 找出所有的类别
+        self.classes_ = np.unique(y)
+
+        # 2. 为每个类别训练一个二分类模型
+        self.classifiers_ = {}
+        for cls in self.classes_:
+            # 将标签转成 [0,1]，属于当前 cls 的记 1，否则记 0
+            y_binary = (y == cls).astype(int)
+
+            # 用你已有的二分类 VF_LR 进行训练
+            clf = VF_LR()
+            clf.fit(XA, XB, y_binary)
+
+            # 存下来
+            self.classifiers_[cls] = clf
+
+        return self
+
+    def predict_proba(self, XA, XB):
+        """
+        预测多分类场景下，每个类别的概率。
+
+        参数:
+        - XA: 特征集 A。
+        - XB: 特征集 B。
+
+        返回:
+        - 形状为 (样本数, 类别数) 的概率矩阵
+          每行对应一个样本，每列对应一个类别
+        """
+        # 按照类别顺序，将各子分类器的 "是该类别" 的概率拼到一起
+        all_probas = []
+
+        for cls in self.classes_:
+            # 取出对应的子分类器
+            clf = self.classifiers_[cls]
+            # 每个子分类器返回形如 (样本数, 2) 的概率
+            # 其中[:, 0] 是 “类别=0” 的概率，[:, 1] 是 “类别=1” 的概率
+            # 这里我们只要 [:, 1] 代表“属于该cls”的概率
+            probas = clf.predict_proba(XA, XB)[:, 1]
+            all_probas.append(probas)
+
+        # 原始形状是 (类别数, 样本数)，转置成 (样本数, 类别数)
+        all_probas = np.array(all_probas).T
+
+        # （可选）对每一行做归一化，让概率之和为1
+        # sum_of_probas = all_probas.sum(axis=1, keepdims=True)
+        # all_probas = all_probas / sum_of_probas
+
+        return all_probas
+
+    def predict(self, XA, XB):
+        """
+        使用模型进行预测(输出离散类别)。
+
+        参数:
+        - XA: 特征集 A。
+        - XB: 特征集 B。
+
+        返回:
+        - 形状为 (样本数,) 的预测结果
+        """
+        # 先拿到概率矩阵
+        all_probas = self.predict_proba(XA, XB)
+
+        # 对每个样本，选择概率最大的列号
+        max_indices = np.argmax(all_probas, axis=1)
+
+        # 将列号映射回真实的类别标签
+        y_pred = self.classes_[max_indices]
+        return y_pred
+```
+
+### 说明
+
+1. **One-vs-Rest 思路**
+   - 对于每一个类别 `cls`，我们都训练一个“是否为 `cls`”的二分类器；在预测时，用各自的二分类器去估计“它是我这个类别”的概率。
+   - 最后将这些概率拼起来，即可得到 `(样本数, 类别数)` 的矩阵。
+
+2. **概率归一化**
+   - One-vs-Rest 的方式有时并不会保证每一行概率和为 1，可以在 `predict_proba` 里对 `all_probas` 做归一化，也可以直接拿二分类器的“正类”概率做决策，不做归一化。
+   - 是否归一化，取决于实际需求。如果只为了做 `predict`（选取最大概率对应的类别），即便不归一化，效果也一致。若需要更符合“概率分布”概念，可以再做一次行归一化处理。
+
+3. **返回自身**
+   - 在 `fit` 函数最后通常会 `return self`，有些场景下（比如 scikit-learn 风格）这样做可以支持链式调用。
+
+可以看到，这样就可以在已有二分类器 `VF_LR` 的基础上，直接封装出多分类的能力。根据项目需求，你也可以继续封装自己的多分类策略，比如 One-vs-One、或直接修改 `VF_LR` 实现 Softmax 等等，但 OvR 是最常见且实现简单的方式之一。

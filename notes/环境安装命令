@@ -14,3 +14,12 @@ python -m ipykernel install --user --name=fate_env
 
 # 下载项目
 git clone https://github.com/lvjiuluan/VFPUMC02.git
+
+
+# jupyter 单元格顶部固定代码
+import sys
+sys.path.append('D:\PyCharmProjects\VFPUMC02')
+sys.path.append(r'C:\Users\Administrator\PycharmProjects\VFPUMC02')
+sys.path.append(r'/root/VFPUMC02')
+%load_ext autoreload
+%autoreload 2

@@ -63,16 +63,16 @@ class VF_TwoStep:
             )
 
         # 校验 min_confidence 是否为非负数
-        if not isinstance(min_confidence, (int, float)) or min_confidence < 0:
-            raise ValueError(
-                f"min_confidence 必须是非负数，但接收到的值是 {min_confidence}。"
-            )
+        # if not isinstance(min_confidence, (int, float)) or min_confidence < 0:
+        #     raise ValueError(
+        #         f"min_confidence 必须是非负数，但接收到的值是 {min_confidence}。"
+        #     )
 
         # 校验 convergence_threshold 是否为正整数
-        if not isinstance(convergence_threshold, int) or convergence_threshold <= 0:
-            raise ValueError(
-                f"convergence_threshold 必须是正整数，但接收到的值是 {convergence_threshold}。"
-            )
+        # if not isinstance(convergence_threshold, int) or convergence_threshold <= 0:
+        #     raise ValueError(
+        #         f"convergence_threshold 必须是正整数，但接收到的值是 {convergence_threshold}。"
+        #     )
 
         # 初始化参数
         self.clf = clf
@@ -81,7 +81,7 @@ class VF_TwoStep:
         self.max_iter = max_iter
         self.min_confidence = min_confidence
         self.convergence_threshold = convergence_threshold
-        self.pred = None  # 用于保存未标注数据的最终预测结果
+        self.pred_clf = None  # 用于保存未标注数据的最终预测结果
 
         # 打印初始化日志
         logging.info(
@@ -159,7 +159,7 @@ class VF_TwoStep:
         """
         # 初始化预测结果数组, 与 XA_U/ XB_U 行数一致
         unlabeled_indices = np.arange(len(XA_U))
-        self.pred = np.full(len(XA_U), np.nan)
+        self.pred_clf = np.full(len(XA_U), np.nan)
 
         logging.info("[INIT] 初始化 self.pred, 未标注数据数量=%d", len(XA_U))
         logging.info("[INIT] 最大迭代次数 max_iter=%d, 每轮选取比例 k=%.2f", self.max_iter, self.k)
@@ -224,7 +224,7 @@ class VF_TwoStep:
                           np.unique(best_pred, return_counts=True))
 
             # 将 self.pred 对应位置赋值为 best_pred
-            self.pred[selected_original_idx] = best_pred
+            self.pred_clf[selected_original_idx] = best_pred
 
             # 5. 将这些样本移动到 Labeled 集合中
             logging.info("[STEP 5] 合并高置信度样本至 Labeled 集...")
@@ -269,9 +269,144 @@ class VF_TwoStep:
                           np.unique(final_pred, return_counts=True))
 
             # 映射到 self.pred
-            self.pred[unlabeled_indices] = final_pred
+            self.pred_clf[unlabeled_indices] = final_pred
 
         logging.info("[DONE] 所有未标注样本的预测任务完成！(self.pred 已更新)")
 
     def __fit__reg(self, XA_L, XB_L, y_L, XA_U, XB_U):
-        pass
+        """
+        自训练过程的主函数。
+
+        参数:
+        ----------
+        XA_L : np.ndarray
+            已标注数据的 A 方特征，形状为 (n_L, dimA)。
+        XB_L : np.ndarray
+            已标注数据的 B 方特征，形状为 (n_L, dimB)。
+        y_L : np.ndarray
+            已标注数据的标签，形状为 (n_L,)。
+        XA_U : np.ndarray
+            未标注数据的 A 方特征，形状为 (n_U, dimA)。
+        XB_U : np.ndarray
+            未标注数据的 B 方特征，形状为 (n_U, dimB)。
+
+        返回:
+        ----------
+        None
+            函数执行结束后，会将对未标注数据的预测结果写入 self.pred。
+        """
+        # 初始化预测结果数组, 与 XA_U/ XB_U 行数一致
+        unlabeled_indices = np.arange(len(XA_U))
+        self.pred_reg = np.full(len(XA_U), np.nan)
+
+        logging.info("[INIT] 初始化 self.pred, 未标注数据数量=%d", len(XA_U))
+        logging.info("[INIT] 最大迭代次数 max_iter=%d, 每轮选取比例 k=%.2f", self.max_iter, self.k)
+
+        start_time = time.time()
+        for epoch in range(self.max_iter):
+            epoch_start_time = time.time()
+
+            logging.info("===== [Epoch %d/%d] 迭代开始 =====", epoch + 1, self.max_iter)
+            logging.info("[INFO] 当前 Labeled 样本数量: %d, Unlabeled 样本数量: %d",
+                         len(XA_L), len(XA_U))
+
+            # 若当前没有任何有标签数据，无法进行训练，直接结束
+            if len(XA_L) == 0:
+                logging.warning("[WARNING] Labeled 数据量为0，无法继续训练，终止迭代。")
+                break
+
+            # 1. 训练分类器
+            logging.info("[STEP 1] 开始训练分类器 (基于 %d 个 Labeled 样本)...", len(XA_L))
+            clf_start_time = time.time()
+            self.clf.fit(XA_L, XB_L, y_L)
+            clf_time = time.time() - clf_start_time
+            logging.info("[STEP 1] 分类器训练完成，耗时 %.2f 秒。", clf_time)
+
+            # 打印一下分类器识别到的类别信息(若有)
+            if hasattr(self.clf, 'classes_'):
+                logging.debug("[DEBUG] 分类器识别的类别列表: %s", self.clf.classes_)
+            else:
+                logging.debug("[DEBUG] 分类器无 'classes_' 属性，无法输出类别列表。")
+
+            # 2. 对 Unlabeled 数据打分
+            logging.info("[STEP 2] 对 Unlabeled 数据进行预测概率计算...")
+            scores_start_time = time.time()
+            proba = self.reg.predict(XA_U, XB_U)
+            # 取预测概率中最大的值作为该样本的置信度
+            scores = proba.max(axis=1)
+            scores_time = time.time() - scores_start_time
+            logging.info("[STEP 2] 预测概率计算完成，耗时 %.2f 秒。", scores_time)
+            logging.debug("[DEBUG] 置信度分数统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
+                          scores.min(), scores.max(), scores.mean(), scores.std())
+
+            # 3. 选出最高置信度的那部分数据
+            logging.info("[STEP 3] 按置信度选取前 %.2f%% 的未标注样本 (min_confidence=%.2f)...",
+                         self.k * 100, self.min_confidence)
+            idx = get_top_k_percent_idx(scores, self.k, pick_lowest=False,
+                                        min_confidence=self.min_confidence)
+
+            if len(idx) == 0:
+                logging.info("[INFO] 本轮没有样本满足置信度筛选条件，终止迭代。")
+                break
+
+            logging.info("[STEP 3] 本轮选中高置信度样本数量: %d, 占未标注样本总数的 %.2f%%",
+                         len(idx), 100.0 * len(idx) / (len(XA_U) + 1e-9))
+            selected_original_idx = unlabeled_indices[idx]
+            logging.debug("[DEBUG] 选中样本在 Unlabeled 集合中的索引: %s", idx)
+            logging.debug("[DEBUG] 选中样本在原始未标注数据中的索引: %s", selected_original_idx)
+
+            # 4. 得到这部分数据的预测标签
+            logging.info("[STEP 4] 获取高置信度样本的预测标签。")
+            best_pred = self.clf.predict(XA_U, XB_U)[idx]
+            logging.debug("[DEBUG] 高置信度样本的预测标签分布: %s",
+                          np.unique(best_pred, return_counts=True))
+
+            # 将 self.pred 对应位置赋值为 best_pred
+            self.pred_reg[selected_original_idx] = best_pred
+
+            # 5. 将这些样本移动到 Labeled 集合中
+            logging.info("[STEP 5] 合并高置信度样本至 Labeled 集...")
+            XA_L = np.concatenate([XA_L, XA_U[idx]], axis=0)
+            XB_L = np.concatenate([XB_L, XB_U[idx]], axis=0)
+            y_L = np.concatenate([y_L, best_pred], axis=0)
+            logging.info("[STEP 5] 合并后 Labeled 样本数=%d", len(XA_L))
+
+            # 从 Unlabeled 集中删除这些样本
+            XA_U = np.delete(XA_U, idx, axis=0)
+            XB_U = np.delete(XB_U, idx, axis=0)
+            unlabeled_indices = np.delete(unlabeled_indices, idx, axis=0)
+            logging.info("[STEP 5] 剩余 Unlabeled 样本数=%d", len(XA_U))
+
+            # 判断是否满足提前收敛条件（本轮选样本不足某个数量）
+            if len(idx) < self.convergence_threshold:
+                logging.info("[INFO] 本轮新增标注数量=%d < 收敛阈值=%d，提前结束迭代。",
+                             len(idx), self.convergence_threshold)
+                break
+
+            # 6. 如果 Unlabeled 集已空，结束迭代
+            if len(XA_U) == 0:
+                logging.info("[INFO] Unlabeled 样本已全部处理完，提前结束迭代。")
+                break
+
+            epoch_elapsed_time = time.time() - epoch_start_time
+            logging.info("===== [Epoch %d/%d] 迭代结束，耗时 %.2f 秒 =====",
+                         epoch + 1, self.max_iter, epoch_elapsed_time)
+
+        total_elapsed_time = time.time() - start_time
+        logging.info("[DONE] 自训练流程结束，共进行了 %d 轮迭代，耗时 %.2f 秒。", epoch + 1, total_elapsed_time)
+        logging.info("[DONE] 目前尚有 %d 个未标注样本未获得最终预测。", len(XA_U))
+
+        # 若还有剩余的未标注数据，则进行一次最终预测
+        if len(XA_U) != 0:
+            logging.info("[FINAL] 对剩余 %d 个未标记样本进行最终预测...", len(XA_U))
+            final_pred_start_time = time.time()
+            final_pred = self.reg.predict(XA_U, XB_U)
+            final_pred_time = time.time() - final_pred_start_time
+            logging.info("[FINAL] 最终预测完成，耗时 %.2f 秒。", final_pred_time)
+            logging.debug("[DEBUG] 剩余未标注样本的预测标签分布: %s",
+                          np.unique(final_pred, return_counts=True))
+
+            # 映射到 self.pred
+            self.pred_reg[unlabeled_indices] = final_pred
+
+        logging.info("[DONE] 所有未标注样本的预测任务完成！(self.pred 已更新)")
