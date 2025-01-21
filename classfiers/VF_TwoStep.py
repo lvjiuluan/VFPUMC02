@@ -1,6 +1,8 @@
 import time
 
 import numpy as np
+
+from enums.ModelType import ModelType
 from utils.DataProcessUtils import determine_task_type
 from utils.DataProcessUtils import get_top_k_percent_idx
 from .VF_BASE import VF_BASE_CLF, VF_BASE_REG
@@ -12,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class VF_TwoStep:
 
-    def __init__(self, clf, reg, k=0.1, max_iter=10, min_confidence=None, convergence_threshold=0):
+    def __init__(self, clf, reg, k=0.1, max_iter=10, min_confidence=0, convergence_threshold=0):
         """
         初始化 VF_TwoStep 类。
 
@@ -81,7 +83,8 @@ class VF_TwoStep:
         self.max_iter = max_iter
         self.min_confidence = min_confidence
         self.convergence_threshold = convergence_threshold
-        self.pred_clf = None  # 用于保存未标注数据的最终预测结果
+        self.pred_clf = None  # 初始化预测结果
+        self.pred_reg = None  # 初始化预测结果
 
         # 打印初始化日志
         logging.info(
@@ -157,7 +160,7 @@ class VF_TwoStep:
         None
             函数执行结束后，会将对未标注数据的预测结果写入 self.pred。
         """
-        # 初始化预测结果数组, 与 XA_U/ XB_U 行数一致
+        # 初始化预测结果数组, 与 XA_U, XB_U 行数一致
         unlabeled_indices = np.arange(len(XA_U))
         self.pred_clf = np.full(len(XA_U), np.nan)
 
@@ -204,8 +207,7 @@ class VF_TwoStep:
             # 3. 选出最高置信度的那部分数据
             logging.info("[STEP 3] 按置信度选取前 %.2f%% 的未标注样本 (min_confidence=%.2f)...",
                          self.k * 100, self.min_confidence)
-            idx = get_top_k_percent_idx(scores, self.k, pick_lowest=False,
-                                        min_confidence=self.min_confidence)
+            idx = get_top_k_percent_idx(scores, self.k, pick_lowest=False)
 
             if len(idx) == 0:
                 logging.info("[INFO] 本轮没有样本满足置信度筛选条件，终止迭代。")
@@ -214,14 +216,10 @@ class VF_TwoStep:
             logging.info("[STEP 3] 本轮选中高置信度样本数量: %d, 占未标注样本总数的 %.2f%%",
                          len(idx), 100.0 * len(idx) / (len(XA_U) + 1e-9))
             selected_original_idx = unlabeled_indices[idx]
-            logging.debug("[DEBUG] 选中样本在 Unlabeled 集合中的索引: %s", idx)
-            logging.debug("[DEBUG] 选中样本在原始未标注数据中的索引: %s", selected_original_idx)
 
             # 4. 得到这部分数据的预测标签
             logging.info("[STEP 4] 获取高置信度样本的预测标签。")
             best_pred = self.clf.predict(XA_U, XB_U)[idx]
-            logging.debug("[DEBUG] 高置信度样本的预测标签分布: %s",
-                          np.unique(best_pred, return_counts=True))
 
             # 将 self.pred 对应位置赋值为 best_pred
             self.pred_clf[selected_original_idx] = best_pred
@@ -295,7 +293,7 @@ class VF_TwoStep:
         None
             函数执行结束后，会将对未标注数据的预测结果写入 self.pred。
         """
-        # 初始化预测结果数组, 与 XA_U/ XB_U 行数一致
+        # 初始化预测结果数组, 与 XA_U, XB_U 行数一致
         unlabeled_indices = np.arange(len(XA_U))
         self.pred_reg = np.full(len(XA_U), np.nan)
 
@@ -315,13 +313,12 @@ class VF_TwoStep:
                 logging.warning("[WARNING] Labeled 数据量为0，无法继续训练，终止迭代。")
                 break
 
-            # 1. 训练分类器
+            # 1. 训练回归器
             logging.info("[STEP 1] 开始训练回归器 (基于 %d 个 Labeled 样本)...", len(XA_L))
             reg_start_time = time.time()
-            self.clf.fit(XA_L, XB_L, y_L)
+            self.reg.fit(XA_L, XB_L, y_L)
             clf_time = time.time() - reg_start_time
             logging.info("[STEP 1] 回归器训练完成，耗时 %.2f 秒。", clf_time)
-
 
             # 2. 对 Unlabeled 数据打分
             logging.info("[STEP 2] 对 Unlabeled 数据进行置信度打分...")
@@ -341,8 +338,7 @@ class VF_TwoStep:
             # 3. 选出最高置信度的那部分数据
             logging.info("[STEP 3] 按置信度选取前 %.2f%% 的未标注样本 (min_confidence=%.2f)...",
                          self.k * 100, self.min_confidence)
-            idx = get_top_k_percent_idx(scores, self.k, pick_lowest=False,
-                                        min_confidence=self.min_confidence)
+            idx = get_top_k_percent_idx(scores, self.k, pick_lowest=True)  # pick_lowest=True 表示选择偏离均值最小的样本
 
             if len(idx) == 0:
                 logging.info("[INFO] 本轮没有样本满足置信度筛选条件，终止迭代。")
@@ -351,14 +347,10 @@ class VF_TwoStep:
             logging.info("[STEP 3] 本轮选中高置信度样本数量: %d, 占未标注样本总数的 %.2f%%",
                          len(idx), 100.0 * len(idx) / (len(XA_U) + 1e-9))
             selected_original_idx = unlabeled_indices[idx]
-            logging.debug("[DEBUG] 选中样本在 Unlabeled 集合中的索引: %s", idx)
-            logging.debug("[DEBUG] 选中样本在原始未标注数据中的索引: %s", selected_original_idx)
 
             # 4. 得到这部分数据的预测标签
             logging.info("[STEP 4] 获取高置信度样本的预测标签。")
             best_pred = predictions[idx]
-            logging.debug("[DEBUG] 高置信度样本的预测标签分布: %s",
-                          np.unique(best_pred, return_counts=True))
 
             # 将 self.pred 对应位置赋值为 best_pred
             self.pred_reg[selected_original_idx] = best_pred
@@ -410,3 +402,14 @@ class VF_TwoStep:
             self.pred_reg[unlabeled_indices] = final_pred
 
         logging.info("[DONE] 所有未标注样本的预测任务完成！(self.pred 已更新)")
+
+    def get_unlabeled_predict(self, model_type=ModelType.CLASSIFICATION):
+        if model_type == ModelType.CLASSIFICATION:
+            # 修改为int类型，只针对预测类型
+            self.pred_clf = self.pred_clf.astype('int')
+            return self.pred_clf
+        elif model_type == ModelType.REGRESSION:
+            return self.pred_reg
+        else:
+            raise ValueError("Invalid model type specified")
+

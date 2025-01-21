@@ -12,6 +12,7 @@ from sklearn.datasets import load_breast_cancer, load_iris, load_diabetes
 from sklearn.model_selection import train_test_split
 
 from consts.Constants import *
+from enums.ModelType import ModelType
 from enums.SbtObjective import SbtObjective
 from utils.Logger import Logger
 from utils.pklUtils import *
@@ -514,7 +515,7 @@ from sklearn.metrics import (
 )
 
 
-def evaluate_model(y_true, y_pred, y_proba=None, task='classification'):
+def evaluate_model(y_true, y_pred, y_proba=None, model_type=ModelType.CLASSIFICATION):
     """
     根据任务类型（分类或回归）打印模型评估指标。
 
@@ -533,7 +534,7 @@ def evaluate_model(y_true, y_pred, y_proba=None, task='classification'):
         指定任务类型，可选 'classification' 或 'regression'，默认 'classification'。
     """
 
-    if task == 'classification':
+    if model_type == ModelType.CLASSIFICATION:
         print("\n========== Classification Metrics ==========")
 
         # --------------------
@@ -576,7 +577,7 @@ def evaluate_model(y_true, y_pred, y_proba=None, task='classification'):
         cls_report = classification_report(y_true, y_pred, zero_division=0)
         print(cls_report)
 
-    elif task == 'regression':
+    elif model_type == ModelType.REGRESSION:
         print("\n========== Regression Metrics ==========")
 
         # --------------------
