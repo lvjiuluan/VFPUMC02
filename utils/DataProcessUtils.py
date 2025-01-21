@@ -647,7 +647,7 @@ def split_labeled_unlabeled_with_2_labels(X, y_C, y_R, k):
     return X_L, y_C_L, y_R_L, X_U, y_C_U, y_R_U
 
 
-def vertical_split(X, random_state=None, first_col_rate=0.5):
+def vertical_split_array(X, random_state=None, first_col_rate=0.5):
     """
     垂直切分矩阵 X 为 XA 和 XB，XA 和 XB 行数相同，列数不同。
 
@@ -690,11 +690,8 @@ def vertical_split(X, random_state=None, first_col_rate=0.5):
     XB_indices = col_indices[first_cols:]
 
     # 根据列索引切分 X
-    if isinstance(X, pd.DataFrame):
-        XA = X.iloc[:, XA_indices]
-        XB = X.iloc[:, XB_indices]
-    else:  # np.ndarray
-        XA = X[:, XA_indices]
-        XB = X[:, XB_indices]
+    XA = X[:, XA_indices]
+    XB = X[:, XB_indices]
+
 
     return XA, XB
