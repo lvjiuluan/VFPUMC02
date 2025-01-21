@@ -390,7 +390,7 @@ class ClientA(Client):
         logger.info(f"A方: 完成模型参数更新，新的 weights = {self.weights}")
 
         # 控制台输出（可酌情在生产环境中关闭或记录为 debug）
-        print("A weights : {}".format(self.weights))
+        logger.info("A weights : {}".format(self.weights))
 
 
 class ClientB(Client):
@@ -612,7 +612,7 @@ class ClientB(Client):
         logger.info(f"B方: 完成模型参数更新，新的 weights = {self.weights}")
 
         # 控制台输出（可酌情在生产环境中关闭或记录为 debug）
-        print("B weights : {}".format(self.weights))
+        logger.info("B weights : {}".format(self.weights))
 
 
 class ClientC(Client):
@@ -740,7 +740,7 @@ class ClientC(Client):
         # 解密总损失 L
         L = self.private_key.decrypt(encrypted_L)
         # 这里的打印最好显眼一点，方便测试时一眼看到
-        print('*' * 8, L, '*' * 8)
+        logger.info('*' * 8, L, '*' * 8)
         logger.info(f"C方: 解密后得到的损失 L = {L}")
 
         # 记录解密后的损失值 L
