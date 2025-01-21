@@ -645,3 +645,56 @@ def split_labeled_unlabeled_with_2_labels(X, y_C, y_R, k):
     print(f"无标签数据 y_R_U 形状: {y_R_U.shape}")
 
     return X_L, y_C_L, y_R_L, X_U, y_C_U, y_R_U
+
+
+def vertical_split(X, random_state=None, first_col_rate=0.5):
+    """
+    垂直切分矩阵 X 为 XA 和 XB，XA 和 XB 行数相同，列数不同。
+
+    参数:
+        X: np.ndarray 或 pd.DataFrame
+            输入数据，行数固定，列数将按比例分割。
+        random_state: int 或 None
+            随机种子，用于打乱列顺序（如果需要）。
+        first_col_rate: float
+            XA 的列数占总列数的比例，范围为 (0, 1)。
+
+    返回:
+        XA: np.ndarray 或 pd.DataFrame
+            切分后的第一部分，列数为 X 列数的 first_col_rate。
+        XB: np.ndarray 或 pd.DataFrame
+            切分后的第二部分，列数为剩余部分。
+    """
+    # 检查输入参数
+    if not (0 < first_col_rate < 1):
+        raise ValueError("first_col_rate 必须在 (0, 1) 范围内")
+
+    if not isinstance(X, (np.ndarray, pd.DataFrame)):
+        raise TypeError("X 必须是 numpy.ndarray 或 pandas.DataFrame 类型")
+
+    # 获取列数
+    total_cols = X.shape[1]
+
+    # 计算 XA 的列数
+    first_cols = int(total_cols * first_col_rate)
+
+    # 设置随机种子（如果需要）
+    rng = np.random.default_rng(random_state)
+
+    # 随机打乱列索引
+    col_indices = np.arange(total_cols)
+    rng.shuffle(col_indices)
+
+    # 切分列索引
+    XA_indices = col_indices[:first_cols]
+    XB_indices = col_indices[first_cols:]
+
+    # 根据列索引切分 X
+    if isinstance(X, pd.DataFrame):
+        XA = X.iloc[:, XA_indices]
+        XB = X.iloc[:, XB_indices]
+    else:  # np.ndarray
+        XA = X[:, XA_indices]
+        XB = X[:, XB_indices]
+
+    return XA, XB
