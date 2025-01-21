@@ -24,8 +24,8 @@ class DataSet:
     def get_data(self):
         df = self.df
         # 分离特征矩阵和标签向量
-        X = df.iloc[:, :-1]  # 除最后一列外的所有列
-        y = df.iloc[:, -1]  # 最后一列
+        X = df.iloc[:, :-1].values  # 除最后一列外的所有列
+        y = df.iloc[:, -1].values  # 最后一列
 
         return X, y
 
