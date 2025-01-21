@@ -583,3 +583,64 @@ def split_labeled_unlabeled(X, y, k):
     print(f"无标签数据 y_U 形状: {y_U.shape}")
 
     return X_L, y_L, X_U, y_U
+
+
+def split_labeled_unlabeled_with_2_labels(X, y1, y2, k):
+    """
+    切分数据集，将一定比例k的样本用于训练（有标签数据），
+    其余作为无标签数据。
+
+    参数:
+    X -- 特征数据 (numpy array)
+    y1 -- 标签数据1 (numpy array)
+    y2 -- 标签数据2 (numpy array)
+    k -- 有标签数据的比例 (0 到 1)
+
+    返回:
+    X_L -- 有标签样本的特征 (numpy array)
+    y1_L -- 有标签样本的标签1 (numpy array)
+    y2_L -- 有标签样本的标签2 (numpy array)
+    X_U -- 无标签样本的特征 (numpy array)
+    y1_U -- 无标签样本的标签1 (numpy array)
+    y2_U -- 无标签样本的标签2 (numpy array)
+    """
+
+    # 确保k在合理范围内
+    if not (0 <= k <= 1):
+        raise ValueError("k应该在0到1之间")
+
+    # 获取数据的总样本数量
+    total_samples = X.shape[0]
+    if y1.shape[0] != total_samples or y2.shape[0] != total_samples:
+        raise ValueError("X, y1 和 y2 的样本数量必须一致")
+
+    labeled_samples_count = int(total_samples * k)
+
+    # 打印初始数据的形状
+    print(f"原始数据 X 形状: {X.shape}")
+    print(f"原始标签 y1 形状: {y1.shape}")
+    print(f"原始标签 y2 形状: {y2.shape}")
+    print(f"选择 {labeled_samples_count} 个样本作为有标签数据，剩余样本作为无标签数据")
+
+    # 随机选择索引来进行切分
+    indices = np.random.permutation(total_samples)
+    labeled_indices = indices[:labeled_samples_count]
+    unlabeled_indices = indices[labeled_samples_count:]
+
+    # 切分数据和标签
+    X_L = X[labeled_indices]
+    y1_L = y1[labeled_indices]
+    y2_L = y2[labeled_indices]
+    X_U = X[unlabeled_indices]
+    y1_U = y1[unlabeled_indices]
+    y2_U = y2[unlabeled_indices]
+
+    # 打印切分后的数据形状
+    print(f"有标签数据 X_L 形状: {X_L.shape}")
+    print(f"有标签数据 y1_L 形状: {y1_L.shape}")
+    print(f"有标签数据 y2_L 形状: {y2_L.shape}")
+    print(f"无标签数据 X_U 形状: {X_U.shape}")
+    print(f"无标签数据 y1_U 形状: {y1_U.shape}")
+    print(f"无标签数据 y2_U 形状: {y2_U.shape}")
+
+    return X_L, y1_L, y2_L, X_U, y1_U, y2_U
