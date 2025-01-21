@@ -24,7 +24,8 @@ class TwoStep:
         self.reg = base_regressor
         self.max_iter = max_iter
         self.k = k
-        self.pred = None  # 初始化预测结果
+        self.pred_clf = None  # 初始化预测结果
+        self.pred_reg = None  # 初始化预测结果
         logging.info("TwoStep 类已初始化: max_iter=%d, k=%.2f, base_classifier=%s, base_regressor=%s",
                      max_iter, k, type(base_classifier).__name__, type(base_regressor).__name__)
 
@@ -76,8 +77,8 @@ class TwoStep:
         """
         # 初始化预测结果数组
         unlabeled_indices = np.arange(len(X_U))
-        self.pred = np.full(len(X_U), np.nan)
-        logging.info("初始化预测结果数组，长度=%d", len(self.pred))
+        self.pred_clf = np.full(len(X_U), np.nan)
+        logging.info("初始化预测结果数组，长度=%d", len(self.pred_clf))
         logging.info("开始自训练迭代，共计划进行 %d 次迭代", self.max_iter)
         start_time = time.time()
 
@@ -127,7 +128,7 @@ class TwoStep:
             logging.debug("预测标签分布: %s", np.unique(best_pred, return_counts=True))
 
             # 把 self.pred 对应位置赋值为 best_pred
-            self.pred[selected_original_idx] = best_pred
+            self.pred_clf[selected_original_idx] = best_pred
             logging.debug("更新 self.pred 的值。")
 
             # 5. 将这些样本从 X_U 中移除，并“转正”到 X_L, y_L
@@ -155,7 +156,7 @@ class TwoStep:
         logging.info("目前尚有 %d 个样本未获得预测标签。", len(X_U))
         if len(X_U) != 0:
             logging.info("还有 %d 个样本没有预测, self.pred中为nan的数量 = %d, len(X_U) = %d, len(unlabeled_indices)"
-                         , len(X_U), np.isnan(self.pred).sum(), len(X_U), len(unlabeled_indices))
+                         , len(X_U), np.isnan(self.pred_clf).sum(), len(X_U), len(unlabeled_indices))
             # 还有一些未标记样本没有预测，需要预测
             logging.info("对剩余未标记的样本进行最终预测。")
             final_pred_start_time = time.time()
@@ -164,7 +165,9 @@ class TwoStep:
             logging.info("完成最终预测，耗时 %.2f 秒。", final_pred_time)
             logging.debug("最终预测标签分布: %s", np.unique(final_pred, return_counts=True))
             # 将最终剩余未标记数据的预测结果，映射回对应的 self.pred 索引
-            self.pred[unlabeled_indices] = final_pred
+            self.pred_clf[unlabeled_indices] = final_pred
+            # 修改为int类型,只针对预测类型
+            self.pred_clf = self.pred_clf.astype('int64')
 
     def __fit__reg(self, X_L, y_L, X_U):
         """
@@ -178,8 +181,8 @@ class TwoStep:
         """
         # 初始化预测结果数组
         unlabeled_indices = np.arange(len(X_U))
-        self.pred = np.full(len(X_U), np.nan)
-        logging.info("初始化预测结果数组，长度=%d", len(self.pred))
+        self.pred_reg = np.full(len(X_U), np.nan)
+        logging.info("初始化预测结果数组，长度=%d", len(self.pred_reg))
         logging.info("开始自训练迭代，共计划进行 %d 次迭代", self.max_iter)
         start_time = time.time()
 
@@ -228,7 +231,7 @@ class TwoStep:
             logging.debug("选中样本的预测值: %s", best_pred)
 
             # 把 self.pred 对应位置赋值为 best_pred
-            self.pred[selected_original_idx] = best_pred
+            self.pred_reg[selected_original_idx] = best_pred
             logging.debug("更新 self.pred 的值。")
 
             # 5. 将这些样本从 X_U 中移除，并“转正”到 X_L, y_L
@@ -256,7 +259,7 @@ class TwoStep:
         logging.info("目前尚有 %d 个样本未获得预测标签。", len(X_U))
         if len(X_U) != 0:
             logging.info("还有 %d 个样本没有预测, self.pred中为nan的数量 = %d, len(X_U) = %d, len(unlabeled_indices) = %d",
-                         len(X_U), np.isnan(self.pred).sum(), len(X_U), len(unlabeled_indices))
+                         len(X_U), np.isnan(self.pred_reg).sum(), len(X_U), len(unlabeled_indices))
             # 还有一些未标记样本没有预测，需要预测
             logging.info("对剩余未标记的样本进行最终预测。")
             final_pred_start_time = time.time()
@@ -266,7 +269,12 @@ class TwoStep:
             logging.debug("最终预测值统计: min=%.4f, max=%.4f, mean=%.4f, std=%.4f",
                           final_pred.min(), final_pred.max(), final_pred.mean(), final_pred.std())
             # 将最终剩余未标记数据的预测结果，映射回对应的 self.pred 索引
-            self.pred[unlabeled_indices] = final_pred
+            self.pred_reg[unlabeled_indices] = final_pred
 
-    def get_unlabled_predict(self):
-        return self.pred
+    def get_unlabled_predict(self, model_type ='clf'):
+        if model_type  == 'clf':
+            return self.pred_clf
+        elif model_type  == 'reg':
+            return self.pred_reg
+        else:
+            raise ValueError("Invalid type specified")
