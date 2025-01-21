@@ -67,7 +67,7 @@ def evaluation_get(server: Server, clients: List[Client]):
     aggr_embedding_data = np.sum(server.test_embedding_data, axis=0)
 
     # 遍历测试集中的每个样本
-    for idx in range(server.test_szie):
+    for idx in range(server.test_size):
         # 使用 softmax 计算预测概率
         pred_prob = softmax(aggr_embedding_data[:, idx] + server.bias)
 
