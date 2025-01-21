@@ -741,7 +741,7 @@ class ClientC(Client):
         # 解密总损失 L
         L = self.private_key.decrypt(encrypted_L)
         # 这里的打印最好显眼一点，方便测试时一眼看到
-        logger.info(f"***************, {L}, ***************,")
+        logger.info(f"***************, {L} , ***************,")
         logger.info(f"C方: 解密后得到的损失 L = {L}")
 
         # 记录解密后的损失值 L
