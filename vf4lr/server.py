@@ -15,8 +15,11 @@ class Server(object):
         self.batch_size = config['batch_size']
         self.lr = config['learning_rate']
         self.test_size = config['test_size']
+        
+        self.Y_test = np.ones(self.test_size)
 
         self.data_num = len(Y_train)
+
 
         # Empty list used to collect clients
         self.clients = list()

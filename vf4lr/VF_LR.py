@@ -1,7 +1,6 @@
 from classfiers.VF_BASE import VF_BASE_CLF
 from utils.FateUtils import determine_task_type
 
-from utils.Logger import logger
 from vf4lr.client import Client
 from vf4lr.server import Server
 from vf4lr.train import vfl_lr_train, evaluation_get
@@ -40,7 +39,7 @@ class VF_LR(VF_BASE_CLF):
         预测结果的概率分布，多列表示不同类别的概率。
     """
 
-    def __init__(self, learning_rate=3, epoch_num=5, batch_size=128):
+    def __init__(self, learning_rate=3, epoch_num=5, batch_size=64):
         """
         初始化 VF_LR 模型。
 

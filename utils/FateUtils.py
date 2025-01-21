@@ -20,6 +20,7 @@ import json
 
 logger = Logger.get_logger()
 
+
 def fate_construct_df(XA, XB, y=None):
     """
     构造两个 DataFrame: A_df 和 B_df。
@@ -474,8 +475,7 @@ def determine_task_type(y: np.ndarray):
     return objective_value, num_class
 
 
-
-def get_data_by_objective(objective: SbtObjective):
+def get_data_by_objective(objective: SbtObjective, test_size=0.2, random_state=42):
     """
     根据给定的枚举类型 (objective)，返回对应的 X, y 数据。
     - BINARY_BCE: 使用乳腺癌数据集 (二分类)
@@ -512,6 +512,7 @@ from sklearn.metrics import (
     classification_report, mean_squared_error,
     mean_absolute_error, r2_score, explained_variance_score
 )
+
 
 def evaluate_model(y_true, y_pred, y_proba=None, task='classification'):
     """
