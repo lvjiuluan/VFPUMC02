@@ -527,17 +527,10 @@ def find_rounds_math(n: int, k: float, r: int) -> int:
     :param r: 希望最终剩下的样本数
     :return: 最终所需轮数 p
     """
-    if r >= n:
-        # 如果 r >= n, 说明不需要抽取即可满足
-        return 0
-
-    if not (0 < k < 1):
-        raise ValueError("k 必须在 (0,1) 之间。")
-
-    # 直接套用推导公式 p = ceil( log(r/n) / log(1-k) )
-    # 注意：log(1 - k) < 0，所以这个值会是负的；要取 ceil。
-    p = math.log(r / n) / math.log(1 - k)
-    p = math.ceil(p)
+    p = 0
+    while n > r:
+        n = n - n * k
+        p += 1
     return p
 
 def split_labeled_unlabeled(X, y, k):

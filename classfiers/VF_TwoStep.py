@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class VF_TwoStep:
 
-    def __init__(self, clf, reg, k=0.1, max_iter=10, min_confidence=None, convergence_threshold=1):
+    def __init__(self, clf, reg, k=0.1, max_iter=10, min_confidence=None, convergence_threshold=0):
         """
         初始化 VF_TwoStep 类。
 
