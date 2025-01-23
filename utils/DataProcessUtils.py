@@ -855,7 +855,7 @@ def get_discrete_columns(df):
         if df[column].dtype == 'object' or df[column].dtype.name == 'category':
             # 如果是字符串类型或分类类型，直接认为是离散列
             discrete_columns.append(column)
-        elif df[column].dtype in ['int64', 'int32', 'float64', 'float32']:
+        elif df[column].dtype in ['int64', 'int32']:
             # 如果是数值类型，检查唯一值的数量是否远小于总行数
             unique_values = df[column].nunique()
             total_values = len(df[column])
