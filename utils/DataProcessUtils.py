@@ -1045,12 +1045,15 @@ def get_identical_columns(df1, df2):
 
     # 遍历所有列名
     for col in df1.columns:
-        # 比较两列的值是否完全相同
-        if df1[col].equals(df2[col]):
+        # 将两列转换为 NumPy 数组
+        col_array1 = df1[col].to_numpy()
+        col_array2 = df2[col].to_numpy()
+
+        # 使用 np.array_equal 比较两列是否完全相同
+        if np.array_equal(col_array1, col_array2):
             identical_columns.append(col)
 
     return identical_columns
-
 
 def get_identical_columns_indices(data1, data2):
     """
