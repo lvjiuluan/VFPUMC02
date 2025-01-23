@@ -1088,3 +1088,39 @@ def get_identical_columns_indices(data1, data2):
             identical_columns_indices.append(col_idx)
 
     return identical_columns_indices
+
+
+def compare_dataframe_columns(df1, df2):
+    """
+    比较两个 DataFrame 的列值，返回列值完全相同的列名列表和列值不同的列名列表。
+
+    参数:
+        df1 (pd.DataFrame): 第一个 DataFrame。
+        df2 (pd.DataFrame): 第二个 DataFrame。
+
+    返回:
+        tuple: (identical_columns, different_columns)
+            - identical_columns (list): 列值完全相同的列名列表。
+            - different_columns (list): 列值不同的列名列表。
+    """
+    # 检查两个 DataFrame 的列数和列名是否一致
+    if not df1.columns.equals(df2.columns):
+        raise ValueError("The columns of the two DataFrames do not match.")
+
+    # 初始化两个列表，用于存储列值完全相同和不同的列名
+    identical_columns = []
+    different_columns = []
+
+    # 遍历所有列名
+    for col in df1.columns:
+        # 将两列转换为 NumPy 数组
+        col_array1 = df1[col].to_numpy()
+        col_array2 = df2[col].to_numpy()
+
+        # 使用 np.array_equal 比较两列是否完全相同
+        if np.array_equal(col_array1, col_array2):
+            identical_columns.append(col)
+        else:
+            different_columns.append(col)
+
+    return identical_columns, different_columns
