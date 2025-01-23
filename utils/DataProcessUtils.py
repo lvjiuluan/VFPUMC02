@@ -994,6 +994,6 @@ def get_unlabeled_row_indices(complete_df_A, incomplete_df_B):
     incomplete_indices = set(incomplete_df_B.index)
 
     # 找到 incomplete_df_B 中未对齐的行索引
-    unlabeled_row_indices = list(incomplete_indices - complete_indices)
+    unlabeled_row_indices = list(complete_indices - incomplete_indices)
 
     return unlabeled_row_indices
