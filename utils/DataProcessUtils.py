@@ -315,6 +315,44 @@ def vertical_split(originalDf, split_rate):
     return df1, df2
 
 
+def vertical_split_by_split_cols(originalDf, split_cols):
+    """
+    根据指定的列数 split_cols，将 DataFrame 垂直切分为两个子 DataFrame。
+
+    参数:
+        originalDf (pd.DataFrame): 原始 DataFrame。
+        split_cols (int): df2 的列数，必须大于 0 且小于 originalDf 的列数。
+
+    返回:
+        tuple: (df1, df2)
+            - df1: 剩余的列组成的 DataFrame。
+            - df2: 包含 split_cols 列的 DataFrame。
+    """
+    # 确保 split_cols 参数合法
+    if split_cols <= 0 or split_cols >= len(originalDf.columns):
+        raise ValueError("split_cols 必须大于 0 且小于 originalDf 的列数")
+
+    # 复制 DataFrame 以避免修改原始数据
+    df = originalDf.copy()
+
+    # 打乱除了 'y' 之外的所有列
+    cols_to_shuffle = df.columns.difference(['y'])
+    df[cols_to_shuffle] = df[cols_to_shuffle].sample(frac=1).reset_index(drop=True)
+
+    # 根据 split_cols 切分列
+    cols_df2 = cols_to_shuffle[-split_cols:]  # df2 的列
+    cols_df1 = cols_to_shuffle[:-split_cols]  # 剩余的列
+
+    # 构造两个子 DataFrame
+    df1 = df[cols_df1]
+    df2 = df[cols_df2]
+
+    print(f"df1 的形状为: {df1.shape}")
+    print(f"df2 的形状为: {df2.shape}")
+
+    return df1, df2
+
+
 def split_and_hide_labels(originalDf, split_rate, unlabeled_rate):
     # 确保输入参数正确
     if abs(sum(split_rate) - 1) > 1e-6:
@@ -1126,3 +1164,11 @@ def compare_dataframe_columns(df1, df2):
             different_columns.append(col)
 
     return identical_columns, different_columns
+
+
+def transform_and_save_df(df, split_cols,file_path, name_prefix, name_suffix):
+    data, y = df.iloc[:, :-1], df.iloc[:, [-1]]
+    df_A, df_B = vertical_split_by_split_cols(data, split_cols=split_cols)
+    y.to_csv(os.path.join(file_path,name_prefix+"y"+name_suffix),index=None)
+    df_A.to_csv(os.path.join(file_path,name_prefix+"df_A"+name_suffix),index=None)
+    df_B.to_csv(os.path.join(file_path,name_prefix+"df_B"+name_suffix),index=None)
