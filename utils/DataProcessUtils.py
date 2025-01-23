@@ -782,3 +782,24 @@ def convert_columns_to_int(df, integer_columns):
             print(f"警告：列 '{col}' 不存在于 DataFrame 中，跳过。")
 
     return new_df
+
+
+def shuffle_column_order(df, column_names):
+    """
+    随机打乱指定列的顺序，保持行顺序不变。
+
+    参数：
+        df (pd.DataFrame): 输入的 DataFrame。
+        column_names (list): 需要随机打乱顺序的列名列表。
+
+    返回：
+        pd.DataFrame: 列顺序随机打乱后的 DataFrame。
+    """
+    # 获取需要打乱的列
+    shuffled_columns = random.sample(column_names, len(column_names))
+
+    # 构造新的列顺序：打乱的列 + 未指定的列（保持原顺序）
+    new_column_order = shuffled_columns + [col for col in df.columns if col not in column_names]
+
+    # 返回按新列顺序排列的 DataFrame
+    return df[new_column_order]
