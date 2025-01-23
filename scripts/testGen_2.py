@@ -2,8 +2,8 @@ import sys
 sys.path.append(r'D:\PyCharmProjects\VFPUMC02')
 sys.path.append(r'C:\Users\Administrator\PycharmProjects\VFPUMC02')
 sys.path.append(r'/root/VFPUMC02')
-%load_ext autoreload
-%autoreload 2
+#%load_ext autoreload
+#%autoreload 2
 
 from datasets.DataSet import BankDataset
 from utils.DataProcessUtils import *
