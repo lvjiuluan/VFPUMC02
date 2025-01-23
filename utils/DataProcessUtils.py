@@ -756,3 +756,29 @@ def vertical_split_array(X, random_state=None, first_col_rate=0.5):
     print(f"切分后XB的形状为{XB.shape}")
 
     return XA, XB
+
+
+def convert_columns_to_int(df, integer_columns):
+    """
+    将指定的列转换为 int 类型。
+
+    参数：
+        df (pd.DataFrame): 输入的 DataFrame。
+        integer_columns (list): 需要转换为 int 类型的列名列表。
+
+    返回：
+        pd.DataFrame: 转换后的 DataFrame。
+    """
+    # 创建 DataFrame 的副本，避免修改原始数据
+    new_df = df.copy()
+
+    # 遍历需要转换的列
+    for col in integer_columns:
+        # 检查列是否存在于 DataFrame 中
+        if col in new_df.columns:
+            # 将列转换为 int 类型，处理空值时填充为 0
+            new_df[col] = new_df[col].fillna(0).astype(int)
+        else:
+            print(f"警告：列 '{col}' 不存在于 DataFrame 中，跳过。")
+
+    return new_df
