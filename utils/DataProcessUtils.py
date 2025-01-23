@@ -907,3 +907,27 @@ def evaluate_imputed_data(original_data, imputed_data):
 
     plt.tight_layout()
     plt.show()
+
+
+def stack_and_reset_index(incomplete_df, imputed_df):
+    """
+    将两个 DataFrame 纵向堆叠起来，并重新构造索引。
+
+    参数:
+        incomplete_df (pd.DataFrame): 第一个 DataFrame。
+        imputed_df (pd.DataFrame): 第二个 DataFrame。
+
+    返回:
+        pd.DataFrame: 堆叠后的新 DataFrame，索引已重置。
+    """
+    # 确保列名和列数相同
+    if list(incomplete_df.columns) != list(imputed_df.columns):
+        raise ValueError("两个 DataFrame 的列名和顺序必须相同")
+
+    # 纵向堆叠两个 DataFrame
+    stacked_df = pd.concat([incomplete_df, imputed_df], axis=0)
+
+    # 重置索引
+    stacked_df.reset_index(drop=True, inplace=True)
+
+    return stacked_df
