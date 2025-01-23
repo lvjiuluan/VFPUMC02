@@ -1023,3 +1023,30 @@ def update_dataframe_with_dict(df, dict_value):
         else:
             raise KeyError(f"Column '{col_name}' not found in DataFrame.")
     return df
+
+
+def get_identical_columns(df1, df2):
+    """
+    比较两个 DataFrame 的列值，返回列值完全相同的列名列表。
+
+    参数:
+        df1 (pd.DataFrame): 第一个 DataFrame。
+        df2 (pd.DataFrame): 第二个 DataFrame。
+
+    返回:
+        list: 列值完全相同的列名列表。
+    """
+    # 检查两个 DataFrame 的列数和列名是否一致
+    if not df1.columns.equals(df2.columns):
+        raise ValueError("The columns of the two DataFrames do not match.")
+
+    # 初始化一个列表，用于存储列值完全相同的列名
+    identical_columns = []
+
+    # 遍历所有列名
+    for col in df1.columns:
+        # 比较两列的值是否完全相同
+        if df1[col].equals(df2[col]):
+            identical_columns.append(col)
+
+    return identical_columns
