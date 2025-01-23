@@ -58,7 +58,6 @@ class VF_LR(VF_BASE_CLF):
             'batch_size': batch_size,
             'client_num': 2  # 固定为2个客户端
         }
-        self._is_fitted = False
 
         # 日志记录
         logger.info("VF_LR 模型初始化完成。")
@@ -84,7 +83,6 @@ class VF_LR(VF_BASE_CLF):
         # 存储训练数据和标签
         self.Y_train = y
         self.X_trains = [XA, XB]
-        self._is_fitted = False
 
         # 打印日志：显示当前训练数据的形状与类别数
         logger.info(f"开始训练垂直联邦逻辑回归模型，客户端A训练数据形状: {XA.shape}, 客户端B训练数据形状: {XB.shape}, 标签大小: {len(y)}")
@@ -166,13 +164,6 @@ class VF_LR(VF_BASE_CLF):
             如果 return_proba = False，返回预测的标签；
             如果 return_proba = True，返回预测的概率分布。
         """
-        # 如果模型已经训练过，则直接使用之前的结果
-        if self._is_fitted:
-            logger.info("模型已训练，直接返回之前的预测结果。")
-            return self.y_proba if return_proba else self.y_pred
-
-        # 尚未训练则需要进行联邦训练过程
-        logger.info("模型尚未训练，开始执行联邦训练流程。")
 
         # 读取训练数据和配置
         Y_train, config = self.Y_train, self.config
@@ -204,8 +195,6 @@ class VF_LR(VF_BASE_CLF):
         self.y_proba, self.y_pred = evaluation_get(server, clients)
         logger.info("获取最终预测结果。")
 
-        # 训练标志置 True
-        self._is_fitted = True
         logger.info("模型训练完成并已缓存预测结果。")
 
         # 根据需求返回预测标签或预测概率

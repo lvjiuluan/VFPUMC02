@@ -16,7 +16,6 @@ class VF_SBT():
             sbt_config.update(config)
             self.config = sbt_config
             self.result = None
-            self._is_fitted = False  # 更具描述性的变量名
             self.objective = None
         except Exception as e:
             print(f"初始化时发生错误: {e}")
@@ -35,7 +34,6 @@ class VF_SBT():
             A_df, B_df = fate_construct_df(XA, XB, y)
             save_host_guest_dataframes(A_df, B_df, A_host_train_path, B_guest_train_path)
             print("VF_SBT训练结束")
-            self._is_fitted = False  # 标记模型需要重新预测
         except Exception as e:
             print(f"训练时发生错误: {e}")
             raise
@@ -61,8 +59,6 @@ class VF_SBT():
         :param return_proba: 是否返回预测概率
         :return: 预测结果或预测概率
         """
-        if self._is_fitted:
-            return self.y_proba if return_proba else self.predict_result
 
         try:
             A_df, B_df = fate_construct_df(XA, XB)
@@ -83,8 +79,6 @@ class VF_SBT():
             self.predict_score = self.pred_df.predict_score
             self.predict_result = self.pred_df.predict_result
             self.y_pred = self.predict_result
-
-            self._is_fitted = True  # 标记模型已进行预测
 
             self.y_proba = None
             if self.objective in {SbtObjective.BINARY_BCE, SbtObjective.MULTI_CE}:
