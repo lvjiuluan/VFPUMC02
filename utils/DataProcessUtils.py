@@ -836,3 +836,30 @@ def constru_row_miss_df(complete_df, miss_rate):
         missing_df = pd.DataFrame(columns=complete_df.columns)  # 空的 DataFrame
 
     return complete_df, incomplete_df, missing_df
+
+
+def get_discrete_columns(df):
+    """
+    获取 DataFrame 中的离散列（类别列）的列名。
+
+    参数:
+        df (pd.DataFrame): 输入的 DataFrame。
+
+    返回:
+        list: 离散列（类别列）的列名列表。
+    """
+    discrete_columns = []
+
+    for column in df.columns:
+        # 判断列是否是离散列
+        if df[column].dtype == 'object' or df[column].dtype.name == 'category':
+            # 如果是字符串类型或分类类型，直接认为是离散列
+            discrete_columns.append(column)
+        elif df[column].dtype in ['int64', 'int32', 'float64', 'float32']:
+            # 如果是数值类型，检查唯一值的数量是否远小于总行数
+            unique_values = df[column].nunique()
+            total_values = len(df[column])
+            if unique_values / total_values < 0.05:  # 可调整阈值，比如 5%
+                discrete_columns.append(column)
+
+    return discrete_columns
