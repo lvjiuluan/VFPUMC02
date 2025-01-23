@@ -866,78 +866,43 @@ def get_discrete_columns(df):
     return discrete_columns
 
 
-def evaluate_imputed_data(original_df: pd.DataFrame, imputed_df: pd.DataFrame) -> None:
-    """
-    比较 original_df 与 imputed_df 的差异，从而评估 imputed_df 的生成/补全效果。
-    - 两个 DataFrame 必须大小相同且列序一致，否则会报错。
-    - 会对数值列计算 RMSE、MSE、MAE、R2、相关系数等指标，并在终端打印。
-    - 可选择画图展示部分对比结果，方法中直接输出而无返回值。
-    """
-    # 1. 检查形状与列名
-    if original_df.shape != imputed_df.shape:
-        raise ValueError("original_df 和 imputed_df 形状不一致！")
-    if not (original_df.columns == imputed_df.columns).all():
-        raise ValueError("original_df 和 imputed_df 的列名不一致！")
+def evaluate_imputed_data(original_data, imputed_data):
+    # 确保数据形状相同
+    if original_data.shape != imputed_data.shape:
+        raise ValueError("Original data and imputed data must have the same shape")
 
-    # 2. 选择数值列，忽略非数值列
-    numeric_cols = original_df.select_dtypes(include=[np.number]).columns
+    # 计算 RMSE (Root Mean Squared Error)
+    rmse = sqrt(mean_squared_error(original_data, imputed_data))
 
-    if len(numeric_cols) == 0:
-        print("警告：没有检测到任何数值列，无法计算数值型误差指标。")
-        return
+    # 计算 MSE (Mean Squared Error)
+    mse = mean_squared_error(original_data, imputed_data)
 
-    # 用于保存整体指标统计
-    metrics_summary = []
+    # 计算 MAE (Mean Absolute Error)
+    mae = mean_absolute_error(original_data, imputed_data)
 
-    # 3. 对数值列逐列计算误差指标
-    for col in numeric_cols:
-        y_true = original_df[col].values
-        y_pred = imputed_df[col].values
+    # 计算 R² (Coefficient of Determination)
+    r2 = r2_score(original_data, imputed_data)
 
-        # RMSE (Root Mean Squared Error)
-        mse_val = mean_squared_error(y_true, y_pred)
-        rmse_val = np.sqrt(mse_val)
+    # 输出结果
+    print(f"RMSE: {rmse}")
+    print(f"MSE: {mse}")
+    print(f"MAE: {mae}")
+    print(f"R²: {r2}")
 
-        # MAE (Mean Absolute Error)
-        mae_val = mean_absolute_error(y_true, y_pred)
+    # 画图比较原始数据和插补数据
+    plt.figure(figsize=(10, 6))
 
-        # R^2
-        r2_val = r2_score(y_true, y_pred)
+    # 绘制原始数据
+    plt.subplot(1, 2, 1)
+    plt.imshow(original_data, cmap='viridis', aspect='auto')
+    plt.title("Original Data")
+    plt.colorbar()
 
-        # Pearson相关系数（简单度量线性相关）
-        corr_val = np.corrcoef(y_true, y_pred)[0, 1] if np.std(y_true) != 0 and np.std(y_pred) != 0 else np.nan
-
-        # 保存结果
-        metrics_summary.append({
-            'column': col,
-            'RMSE': rmse_val,
-            'MSE': mse_val,
-            'MAE': mae_val,
-            'R2': r2_val,
-            'Corr': corr_val
-        })
-
-    # 4. 打印指标汇总
-    print("数值列误差指标对比：")
-    metrics_df = pd.DataFrame(metrics_summary)
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-        print(metrics_df)
-
-    # 5. 画图示例（可根据需求调整）
-    #    这里演示一种简单做法：对每个数值列画散点图，对比 (original, imputed) 的分布
-    num_plots = len(numeric_cols)
-    nrows = int(np.ceil(num_plots / 3))  # 每行放3张图，自己调节
-    ncols = min(num_plots, 3)
-
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5 * ncols, 4 * nrows))
-    axes = axes.flatten() if num_plots > 1 else [axes]  # 兼容只有一个数值列的情况
-
-    for i, col in enumerate(numeric_cols):
-        ax = axes[i]
-        ax.scatter(original_df[col], imputed_df[col], alpha=0.5)
-        ax.set_xlabel(f"Original {col}")
-        ax.set_ylabel(f"Imputed {col}")
-        ax.set_title(f"{col} 对比")
+    # 绘制插补后的数据
+    plt.subplot(1, 2, 2)
+    plt.imshow(imputed_data, cmap='viridis', aspect='auto')
+    plt.title("Imputed Data")
+    plt.colorbar()
 
     plt.tight_layout()
     plt.show()
