@@ -957,7 +957,7 @@ def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, predict_cols
 
     # 根据 train_cols 从 construct_df_B_L 和 construct_df_B_U 得到 construct_df_B_L_train 和 construct_df_B_U_gen
     construct_df_B_L_train = construct_df_B_L[train_cols] if construct_df_B_L is not None and train_cols else None
-    construct_df_B_U_gen = construct_df_B_U[train_cols] if construct_df_B_U is not None and train_cols else None
+    construct_df_B_U_train = construct_df_B_U[train_cols] if construct_df_B_U is not None and train_cols else None
 
     # 打印日志信息
     print("=== Logs ===")
@@ -969,8 +969,8 @@ def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, predict_cols
     print(f"y_L_dict keys: {list(y_L_dict.keys())}")
     print(f"y_U_dict keys: {list(y_U_dict.keys())}")
     print(f"construct_df_B_L_train: {construct_df_B_L_train.shape if construct_df_B_L_train is not None else 'None'}")
-    print(f"construct_df_B_U_gen: {construct_df_B_U_gen.shape if construct_df_B_U_gen is not None else 'None'}")
+    print(f"construct_df_B_U_train: {construct_df_B_U_train.shape if construct_df_B_U_train is not None else 'None'}")
     print("=== End of Logs ===\n")
 
     # 返回结果
-    return df_A_L, df_A_U, construct_df_B_L, construct_df_B_U, y_L_dict, y_U_dict, construct_df_B_L_train, construct_df_B_U_gen
+    return df_A_L, df_A_U, construct_df_B_L, construct_df_B_U, y_L_dict, y_U_dict, construct_df_B_L_train, construct_df_B_U_train
