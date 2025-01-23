@@ -17,7 +17,7 @@ class VFPU_GEN:
         self.synthetic_data = None
         self.construct_df_B = None
 
-    def fit(self, complete_df_A, incomplete_df_B, predict_cols):
+    def fit(self, complete_df_A, incomplete_df_B, predict_cols = None):
         self.complete_df_A = complete_df_A
         self.incomplete_df_B = incomplete_df_B
         # 获取未对齐的部分行索引
@@ -36,14 +36,30 @@ class VFPU_GEN:
             self.unlabeled_row_indices,
             predict_cols
         )
-        if construct_df_B_L_train is None:
+        m = incomplete_df_B.shape[1]
+        if len(predict_cols) == m:
+            # 全部列预测
             y_pred_dict = {}
             for key, y_L in y_L_dict.items():
                 self.two_step.fit(df_A_L.values, y_L.values, df_A_U.values)
                 y_pred = self.two_step.get_unlabeled_predict_by_label(y_L)
                 y_pred_dict[key] = y_pred
-            imputed_data = pd.DataFrame(y_pred_dict)
-
+            self.synthetic_data = pd.DataFrame(y_pred_dict)
+            print("训练完成")
+            return
+        # 使用VF_TwoStep模型预测未标记数据
+        y_pred_dict = {}
+        for key, y_L in y_L_dict.items():
+            self.vf_two_step.fit(
+                XA_L=df_A_L.values,
+                XB_L=construct_df_B_L_train.values,
+                y_L=y_L,
+                XA_U=df_A_U.values,
+                XB_U=construct_df_B_U_train.values
+            )
+            y_pred = self.vf_two_step.get_unlabeled_predict_by_label(y_L)
+            y_pred_dict[key] = y_pred
+        self.synthetic_data = pd.DataFrame(y_pred_dict)
 
     def get_synthetic_data(self):
         return self.synthetic_data
