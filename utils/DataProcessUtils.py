@@ -806,3 +806,49 @@ def shuffle_column_order(df, column_names):
 
     # 返回按新列顺序排列的 DataFrame
     return df[new_column_order]
+
+
+def constru_row_miss_df(complete_df, miss_rate):
+    """
+    构造一个具有行缺失的数据集，并返回完整数据集、不完整数据集和掩码矩阵。
+
+    :param complete_df: 完整的 DataFrame
+    :param miss_rate: 缺失率（0 到 1 之间的浮点数）
+    :return: complete_df, incomplete_df, 掩码矩阵
+    """
+    no, dim = complete_df.shape  # 获取数据的行数和列数
+    n = round(no * miss_rate)  # 根据缺失率计算需要丢弃的行数
+
+    # 随机选择要丢弃的行索引
+    missing_indices = complete_df.sample(n).index
+
+    # 构造掩码矩阵：1 表示数据存在，0 表示数据缺失
+    mask_matrix = np.ones(complete_df.shape, dtype=int)
+    mask_matrix[missing_indices, :] = 0  # 将丢弃的行对应的掩码设置为 0
+
+    # 构造不完整的数据集
+    incomplete_df = complete_df.drop(missing_indices)
+
+    return complete_df, incomplete_df, mask_matrix
+
+
+def rmse_loss(complete_df, imputed_df, mask_matrix):
+    """
+    计算 imputed_df 和 complete_df 之间的 RMSE 损失，仅对缺失的部分进行计算。
+
+    :param complete_df: 完整数据集（pandas DataFrame）
+    :param imputed_df: 填充后的数据集（pandas DataFrame）
+    :param mask_matrix: 掩码矩阵，1 表示数据存在，0 表示数据缺失（numpy array）
+    :return: RMSE 损失（float）
+    """
+    # 转换为 numpy 数组以便计算
+    complete_array = complete_df.to_numpy()
+    imputed_array = imputed_df.to_numpy()
+
+    # 计算误差，仅对 mask_matrix 中为 0 的位置计算
+    missing_mask = (mask_matrix == 0)  # 找到缺失值的位置
+    diff = complete_array[missing_mask] - imputed_array[missing_mask]  # 计算误差
+    mse = np.mean(diff ** 2)  # 均方误差
+    rmse = np.sqrt(mse)  # 均方根误差
+
+    return rmse
