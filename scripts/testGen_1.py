@@ -116,8 +116,8 @@ logging.info("Initializing TwoStep model...")
 two_step = TwoStep(
     base_classifier=clf,
     base_regressor=reg,
-    max_iter=100,
-    k=0.1
+    max_iter=5,
+    k=0.25
 )
 
 # 使用TwoStep模型预测未标记数据
@@ -178,8 +178,8 @@ vf_reg = VF_LinearRegression(
 vf_two_step = VF_TwoStep(
     clf=vf_clf,
     reg=vf_reg,
-    k=0.1,
-    max_iter=100
+    k=0.25,
+    max_iter=5
 )
 
 # 使用VF_TwoStep模型预测未标记数据

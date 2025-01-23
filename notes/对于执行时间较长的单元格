@@ -4,9 +4,9 @@
 3. 安装screen，大多数linux系统都已经默认安装
     sudo apt update
     sudo apt install screen
-4. screen -S runSrc
+4. screen -S runScr
 5. ctrl-a d   # 挂起当前会话
-6. screen -r runSrc # 恢复指定会话
+6. screen -r runScr # 恢复指定会话
 7. screen -S 1077.runScr -X quit # 删除会话
 
 
