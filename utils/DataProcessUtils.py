@@ -931,3 +931,30 @@ def stack_and_reset_index(incomplete_df, imputed_df):
     stacked_df.reset_index(drop=True, inplace=True)
 
     return stacked_df
+
+
+def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, gen_cols):
+    # 获取 labeled_row_indices
+    labeled_row_indices = [i for i in df_A.index if i not in unlabeled_row_indices]
+
+    # 根据 labeled_row_indices 和 unlabeled_row_indices 划分 df_A
+    df_A_L = df_A.loc[labeled_row_indices] if labeled_row_indices else None
+    df_A_U = df_A.loc[unlabeled_row_indices] if unlabeled_row_indices else None
+
+    # 根据 labeled_row_indices 和 unlabeled_row_indices 划分 construct_df_B
+    construct_df_B_L = construct_df_B.loc[labeled_row_indices] if labeled_row_indices else None
+    construct_df_B_U = construct_df_B.loc[unlabeled_row_indices] if unlabeled_row_indices else None
+
+    # 获取 train_cols
+    train_cols = [col for col in construct_df_B.columns if col not in gen_cols]
+
+    # 根据 gen_cols 从 construct_df_B_L 和 construct_df_B_U 生成字典 y_L_dict 和 y_U_dict
+    y_L_dict = {col: construct_df_B_L[col] for col in gen_cols} if construct_df_B_L is not None else {}
+    y_U_dict = {col: construct_df_B_U[col] for col in gen_cols} if construct_df_B_U is not None else {}
+
+    # 根据 train_cols 从 construct_df_B_L 和 construct_df_B_U 得到 construct_df_B_L_train 和 construct_df_B_U_train
+    construct_df_B_L_train = construct_df_B_L[train_cols] if construct_df_B_L is not None and train_cols else None
+    construct_df_B_U_train = construct_df_B_U[train_cols] if construct_df_B_U is not None and train_cols else None
+
+    # 返回结果
+    return df_A_L, df_A_U, construct_df_B_L, construct_df_B_U, y_L_dict, y_U_dict, construct_df_B_L_train, construct_df_B_U_train
