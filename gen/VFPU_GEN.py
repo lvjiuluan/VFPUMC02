@@ -1,6 +1,7 @@
 from classfiers.TwoStep import TwoStep
 from classfiers.VF_TwoStep import VF_TwoStep
-from utils.DataProcessUtils import get_unlabeled_row_indices, stack_and_reset_index, process_dataframes
+from utils.DataProcessUtils import get_unlabeled_row_indices, stack_and_reset_index, process_dataframes, \
+    update_dataframe_with_dict
 import pandas as pd
 
 
@@ -17,7 +18,7 @@ class VFPU_GEN:
         self.synthetic_data = None
         self.construct_df_B = None
 
-    def fit(self, complete_df_A, incomplete_df_B, predict_cols = None):
+    def fit(self, complete_df_A, incomplete_df_B, predict_cols=None):
         self.complete_df_A = complete_df_A
         self.incomplete_df_B = incomplete_df_B
         # 获取未对齐的部分行索引
@@ -59,7 +60,7 @@ class VFPU_GEN:
             )
             y_pred = self.vf_two_step.get_unlabeled_predict_by_label(y_L)
             y_pred_dict[key] = y_pred
-        self.synthetic_data = pd.DataFrame(y_pred_dict)
+        self.synthetic_data = update_dataframe_with_dict(construct_df_B_U_train, y_pred_dict)
 
     def get_synthetic_data(self):
         return self.synthetic_data

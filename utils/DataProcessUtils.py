@@ -997,3 +997,29 @@ def get_unlabeled_row_indices(complete_df_A, incomplete_df_B):
     unlabeled_row_indices = list(complete_indices - incomplete_indices)
 
     return unlabeled_row_indices
+
+
+def update_dataframe_with_dict(df, dict_value):
+    """
+    更新 DataFrame 中的列值，使用 dict_value 中的值。
+
+    参数:
+        df (pd.DataFrame): 要更新的 DataFrame。
+        dict_value (dict): 包含列名和对应值的字典，值是与 DataFrame 长度相同的 NumPy 数组。
+
+    返回:
+        pd.DataFrame: 更新后的 DataFrame。
+    """
+    # 遍历字典中的列名和值
+    for col_name, value in dict_value.items():
+        # 检查列名是否在 DataFrame 中
+        if col_name in df.columns:
+            # 检查值的长度是否与 DataFrame 的长度一致
+            if len(value) == len(df):
+                # 更新 DataFrame 中对应列的值
+                df[col_name] = value
+            else:
+                raise ValueError(f"Length of value for column '{col_name}' does not match DataFrame length.")
+        else:
+            raise KeyError(f"Column '{col_name}' not found in DataFrame.")
+    return df

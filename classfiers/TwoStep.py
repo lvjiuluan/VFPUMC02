@@ -154,7 +154,7 @@ class TwoStep:
         logger.info("训练流程结束。共进行了 %d 次迭代，耗时 %.2f 秒。", epoch, total_elapsed_time)
         logger.info("目前尚有 %d 个样本未获得预测标签。", len(X_U))
         if len(X_U) != 0:
-            logger.info("还有 %d 个样本没有预测, self.pred中为nan的数量 = %d, len(X_U) = %d, len(unlabeled_indices)"
+            logger.info("还有 %d 个样本没有预测, self.pred中为nan的数量 = %d, len(X_U) = %d, len(unlabeled_indices)=%d"
                         , len(X_U), np.isnan(self.pred_clf).sum(), len(X_U), len(unlabeled_indices))
             # 还有一些未标记样本没有预测，需要预测
             logger.info("对剩余未标记的样本进行最终预测。")
