@@ -7,7 +7,8 @@ import numpy as np
 import yaml
 from consts.Constants import CONFIGS_PATH
 import random
-
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 def subtract_random_from_method(df: pd.DataFrame, methodName, a: float, b: float) -> pd.DataFrame:
     """
@@ -863,3 +864,95 @@ def get_discrete_columns(df):
                 discrete_columns.append(column)
 
     return discrete_columns
+
+
+def evaluate_imputed_data(original_df: pd.DataFrame, imputed_df: pd.DataFrame) -> None:
+    """
+    比较 original_df 与 imputed_df 的差异，从而评估 imputed_df 的生成/补全效果。
+    - 两个 DataFrame 必须大小相同且列序一致，否则会报错。
+    - 会对数值列计算 RMSE、MSE、MAE、R2、相关系数等指标，并在终端打印。
+    - 可选择画图展示部分对比结果，方法中直接输出而无返回值。
+    """
+    # 1. 检查形状与列名
+    if original_df.shape != imputed_df.shape:
+        raise ValueError("original_df 和 imputed_df 形状不一致！")
+    if not (original_df.columns == imputed_df.columns).all():
+        raise ValueError("original_df 和 imputed_df 的列名不一致！")
+
+    # 2. 选择数值列，忽略非数值列
+    numeric_cols = original_df.select_dtypes(include=[np.number]).columns
+
+    if len(numeric_cols) == 0:
+        print("警告：没有检测到任何数值列，无法计算数值型误差指标。")
+        return
+
+    # 用于保存整体指标统计
+    metrics_summary = []
+
+    # 3. 对数值列逐列计算误差指标
+    for col in numeric_cols:
+        y_true = original_df[col].values
+        y_pred = imputed_df[col].values
+
+        # RMSE (Root Mean Squared Error)
+        mse_val = mean_squared_error(y_true, y_pred)
+        rmse_val = np.sqrt(mse_val)
+
+        # MAE (Mean Absolute Error)
+        mae_val = mean_absolute_error(y_true, y_pred)
+
+        # R^2
+        r2_val = r2_score(y_true, y_pred)
+
+        # Pearson相关系数（简单度量线性相关）
+        corr_val = np.corrcoef(y_true, y_pred)[0, 1] if np.std(y_true) != 0 and np.std(y_pred) != 0 else np.nan
+
+        # 保存结果
+        metrics_summary.append({
+            'column': col,
+            'RMSE': rmse_val,
+            'MSE': mse_val,
+            'MAE': mae_val,
+            'R2': r2_val,
+            'Corr': corr_val
+        })
+
+    # 4. 打印指标汇总
+    print("数值列误差指标对比：")
+    metrics_df = pd.DataFrame(metrics_summary)
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(metrics_df)
+
+    # 5. 画图示例（可根据需求调整）
+    #    这里演示一种简单做法：对每个数值列画散点图，对比 (original, imputed) 的分布
+    num_plots = len(numeric_cols)
+    nrows = int(np.ceil(num_plots / 3))  # 每行放3张图，自己调节
+    ncols = min(num_plots, 3)
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5 * ncols, 4 * nrows))
+    axes = axes.flatten() if num_plots > 1 else [axes]  # 兼容只有一个数值列的情况
+
+    for i, col in enumerate(numeric_cols):
+        ax = axes[i]
+        ax.scatter(original_df[col], imputed_df[col], alpha=0.5)
+        ax.set_xlabel(f"Original {col}")
+        ax.set_ylabel(f"Imputed {col}")
+        ax.set_title(f"{col} 对比")
+
+    plt.tight_layout()
+    plt.show()
+
+    # 6. 如果想看各个列的差值分布，也可以再加一个可视化（示例）
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5 * ncols, 4 * nrows))
+    axes = axes.flatten() if num_plots > 1 else [axes]
+
+    for i, col in enumerate(numeric_cols):
+        ax = axes[i]
+        diff = original_df[col] - imputed_df[col]
+        ax.hist(diff, bins=30, alpha=0.7, color='steelblue')
+        ax.set_title(f"{col} 差值分布 (original - imputed)")
+        ax.set_xlabel("Difference")
+        ax.set_ylabel("Frequency")
+
+    plt.tight_layout()
+    plt.show()
