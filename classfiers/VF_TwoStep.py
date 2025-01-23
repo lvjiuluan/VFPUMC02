@@ -413,3 +413,10 @@ class VF_TwoStep:
         else:
             raise ValueError("Invalid model type specified")
 
+    def get_unlabeled_predict_by_label(self, y_L):
+        # 根据有标签数据的情况，判断任务类型
+        task_type = determine_task_type(y_L)
+        if task_type == "classification":
+            return self.get_unlabeled_predict(ModelType.CLASSIFICATION)
+        elif task_type == "regression":
+            return self.get_unlabeled_predict(ModelType.REGRESSION)
