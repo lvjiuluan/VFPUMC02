@@ -870,7 +870,7 @@ def get_discrete_columns(df):
     return discrete_columns
 
 
-def evaluate_imputed_data(original_data, imputed_data):
+def evaluate_imputed_data(original_data, imputed_data, plotFig=False):
     # 确保数据形状相同
     if original_data.shape != imputed_data.shape:
         raise ValueError("Original data and imputed data must have the same shape")
@@ -893,23 +893,24 @@ def evaluate_imputed_data(original_data, imputed_data):
     print(f"MAE: {mae}")
     print(f"R²: {r2}")
 
-    # 画图比较原始数据和插补数据
-    plt.figure(figsize=(10, 6))
+    if plotFig == True:
+        # 画图比较原始数据和插补数据
+        plt.figure(figsize=(10, 6))
 
-    # 绘制原始数据
-    plt.subplot(1, 2, 1)
-    plt.imshow(original_data, cmap='viridis', aspect='auto')
-    plt.title("Original Data")
-    plt.colorbar()
+        # 绘制原始数据
+        plt.subplot(1, 2, 1)
+        plt.imshow(original_data, cmap='viridis', aspect='auto')
+        plt.title("Original Data")
+        plt.colorbar()
 
-    # 绘制插补后的数据
-    plt.subplot(1, 2, 2)
-    plt.imshow(imputed_data, cmap='viridis', aspect='auto')
-    plt.title("Imputed Data")
-    plt.colorbar()
+        # 绘制插补后的数据
+        plt.subplot(1, 2, 2)
+        plt.imshow(imputed_data, cmap='viridis', aspect='auto')
+        plt.title("Imputed Data")
+        plt.colorbar()
 
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 
     return rmse, mse, mae, r2
 
@@ -1054,6 +1055,7 @@ def get_identical_columns(df1, df2):
             identical_columns.append(col)
 
     return identical_columns
+
 
 def get_identical_columns_indices(data1, data2):
     """
