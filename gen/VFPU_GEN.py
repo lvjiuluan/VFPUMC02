@@ -60,7 +60,8 @@ class VFPU_GEN:
             )
             y_pred = self.vf_two_step.get_unlabeled_predict_by_label(y_L)
             y_pred_dict[key] = y_pred
-        self.synthetic_data = update_dataframe_with_dict(construct_df_B_U_train, y_pred_dict)
+
+        self.synthetic_data = update_dataframe_with_dict(construct_df_B_U, y_pred_dict)
 
     def get_synthetic_data(self):
         return self.synthetic_data
