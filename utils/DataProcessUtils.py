@@ -1050,3 +1050,34 @@ def get_identical_columns(df1, df2):
             identical_columns.append(col)
 
     return identical_columns
+
+
+
+
+def get_identical_columns_indices(array1, array2):
+    """
+    比较两个 NumPy 二维数组的列值，返回列值完全相同的列的索引列表。
+
+    参数:
+        array1 (np.ndarray): 第一个二维数组。
+        array2 (np.ndarray): 第二个二维数组。
+
+    返回:
+        list: 列值完全相同的列的索引列表。
+    """
+    # 检查两个数组的形状是否一致
+    if array1.shape[1] != array2.shape[1]:
+        raise ValueError("The number of columns in the two arrays must be the same.")
+    if array1.shape[0] != array2.shape[0]:
+        raise ValueError("The number of rows in the two arrays must be the same.")
+
+    # 初始化一个列表，用于存储列值完全相同的列索引
+    identical_columns_indices = []
+
+    # 遍历所有列索引
+    for col_idx in range(array1.shape[1]):
+        # 比较两列的值是否完全相同
+        if np.array_equal(array1[:, col_idx], array2[:, col_idx]):
+            identical_columns_indices.append(col_idx)
+
+    return identical_columns_indices
