@@ -17,7 +17,7 @@ class VFPU_GEN_DATASET:
         ...
     """
 
-    def __init__(self, directory: str = DATASETS_PATH, file_pattern: str = r"^VFPU_GEN_(.+)_(.+)\.csv$"):
+    def __init__(self, directory: str = DATASETS_PATH, file_pattern: str = r"^VFPU_GEN_([^_]+)_(.+)\.csv$"):
         """
         参数：
             directory: 要扫描的目录，默认为当前目录(".")。
