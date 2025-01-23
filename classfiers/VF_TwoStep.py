@@ -235,7 +235,8 @@ class VF_TwoStep:
             XA_U = np.delete(XA_U, idx, axis=0)
             XB_U = np.delete(XB_U, idx, axis=0)
             unlabeled_indices = np.delete(unlabeled_indices, idx, axis=0)
-            logging.info("[STEP 5] 剩余 Unlabeled 样本数=%d", len(XA_U))
+            logging.info("[STEP 5] 从 Unlabeled 集中删除这些样本,剩余 Unlabeled len(XA_U)=%d,len(XB_U)=%d, len(unlabeled_indices)=%d",
+                         len(XA_U),len(XB_U),len(unlabeled_indices))
 
             # 判断是否满足提前收敛条件（本轮选样本不足某个数量）
             if len(idx) < self.convergence_threshold:
@@ -258,13 +259,12 @@ class VF_TwoStep:
 
         # 若还有剩余的未标注数据，则进行一次最终预测
         if len(XA_U) != 0:
-            logging.info("[FINAL] 对剩余 %d 个未标记样本进行最终预测...", len(XA_U))
+            logging.info("[FINAL] 对剩余 %d 个未标记样本进行最终预测... unlabeled_indices 大小为 %d", len(XA_U),len(unlabeled_indices))
             final_pred_start_time = time.time()
             final_pred = self.clf.predict(XA_U, XB_U)
             final_pred_time = time.time() - final_pred_start_time
             logging.info("[FINAL] 最终预测完成，耗时 %.2f 秒。", final_pred_time)
-            logging.debug("[DEBUG] 剩余未标注样本的预测标签分布: %s",
-                          np.unique(final_pred, return_counts=True))
+
 
             # 映射到 self.pred
             self.pred_clf[unlabeled_indices] = final_pred
