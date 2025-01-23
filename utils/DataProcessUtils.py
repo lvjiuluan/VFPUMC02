@@ -1172,3 +1172,5 @@ def transform_and_save_df(df, split_cols,file_path, name_prefix, name_suffix):
     y.to_csv(os.path.join(file_path,name_prefix+"y"+name_suffix),index=None)
     df_A.to_csv(os.path.join(file_path,name_prefix+"df_A"+name_suffix),index=None)
     df_B.to_csv(os.path.join(file_path,name_prefix+"df_B"+name_suffix),index=None)
+
+    return df_A, df_B, y
