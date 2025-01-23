@@ -262,11 +262,13 @@ class VF_TwoStep:
             logging.info("[FINAL] 对剩余 %d 个未标记样本进行最终预测... unlabeled_indices 大小为 %d", len(XA_U),len(unlabeled_indices))
             final_pred_start_time = time.time()
             final_pred = self.clf.predict(XA_U, XB_U)
+            logging.info(f"final_pred的长度为{len(final_pred)}")
             final_pred_time = time.time() - final_pred_start_time
             logging.info("[FINAL] 最终预测完成，耗时 %.2f 秒。", final_pred_time)
 
 
             # 映射到 self.pred
+            logging.info(f"self.pred_clf[unlabeled_indices]的长度为: {len(self.pred_clf[unlabeled_indices])}")
             self.pred_clf[unlabeled_indices] = final_pred
 
         logging.info("[DONE] 所有未标注样本的预测任务完成！(self.pred 已更新)")
