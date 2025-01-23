@@ -911,6 +911,8 @@ def evaluate_imputed_data(original_data, imputed_data):
     plt.tight_layout()
     plt.show()
 
+    return rmse, mse, mae, r2
+
 
 def stack_and_reset_index(incomplete_df, imputed_df):
     """
@@ -974,3 +976,24 @@ def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, predict_cols
 
     # 返回结果
     return df_A_L, df_A_U, construct_df_B_L, construct_df_B_U, y_L_dict, y_U_dict, construct_df_B_L_train, construct_df_B_U_train
+
+
+def get_unlabeled_row_indices(complete_df_A, incomplete_df_B):
+    """
+    获取 incomplete_df_B 中未对齐的部分行索引（即不在 complete_df_A 中的行索引）。
+
+    参数:
+        complete_df_A (pd.DataFrame): 完整的 DataFrame。
+        incomplete_df_B (pd.DataFrame): 可能不完整的 DataFrame。
+
+    返回:
+        unlabeled_row_indices (list): incomplete_df_B 中未对齐的行索引列表。
+    """
+    # 获取 complete_df_A 和 incomplete_df_B 的行索引
+    complete_indices = set(complete_df_A.index)
+    incomplete_indices = set(incomplete_df_B.index)
+
+    # 找到 incomplete_df_B 中未对齐的行索引
+    unlabeled_row_indices = list(incomplete_indices - complete_indices)
+
+    return unlabeled_row_indices
