@@ -60,6 +60,10 @@ class VF_LR(VF_BASE_CLF):
         }
         self._is_fitted = False
 
+        # 日志记录
+        logger.info("VF_LR 模型初始化完成。")
+        logger.info("模型配置: %s", self.config)
+
     def fit(self, XA, XB, y):
         """
         训练垂直联邦逻辑回归模型。

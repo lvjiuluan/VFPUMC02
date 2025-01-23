@@ -23,3 +23,5 @@ sys.path.append(r'C:\Users\Administrator\PycharmProjects\VFPUMC02')
 sys.path.append(r'/root/VFPUMC02')
 %load_ext autoreload
 %autoreload 2
+
+# 想要单元格不输出内容，在语句后面加一个分号即可
