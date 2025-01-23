@@ -306,6 +306,9 @@ def vertical_split(originalDf, split_rate):
     df1 = df[cols_df1]
     df2 = df[cols_df2]
 
+    print(f"dfA的形状为:{df1.shape}")
+    print(f"dfB的形状为:{df2.shape}")
+
     return df1, df2
 
 
