@@ -936,7 +936,7 @@ def stack_and_reset_index(incomplete_df, imputed_df):
     return stacked_df
 
 
-def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, gen_cols):
+def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, predict_cols):
     # 获取 labeled_row_indices
     labeled_row_indices = [i for i in df_A.index if i not in unlabeled_row_indices]
 
@@ -949,15 +949,15 @@ def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, gen_cols):
     construct_df_B_U = construct_df_B.loc[unlabeled_row_indices] if unlabeled_row_indices else None
 
     # 获取 train_cols
-    train_cols = [col for col in construct_df_B.columns if col not in gen_cols]
+    train_cols = [col for col in construct_df_B.columns if col not in predict_cols]
 
-    # 根据 gen_cols 从 construct_df_B_L 和 construct_df_B_U 生成字典 y_L_dict 和 y_U_dict
-    y_L_dict = {col: construct_df_B_L[col] for col in gen_cols} if construct_df_B_L is not None else {}
-    y_U_dict = {col: construct_df_B_U[col] for col in gen_cols} if construct_df_B_U is not None else {}
+    # 根据 predict_cols 从 construct_df_B_L 和 construct_df_B_U 生成字典 y_L_dict 和 y_U_dict
+    y_L_dict = {col: construct_df_B_L[col] for col in predict_cols} if construct_df_B_L is not None else {}
+    y_U_dict = {col: construct_df_B_U[col] for col in predict_cols} if construct_df_B_U is not None else {}
 
-    # 根据 train_cols 从 construct_df_B_L 和 construct_df_B_U 得到 construct_df_B_L_train 和 construct_df_B_U_train
+    # 根据 train_cols 从 construct_df_B_L 和 construct_df_B_U 得到 construct_df_B_L_train 和 construct_df_B_U_gen
     construct_df_B_L_train = construct_df_B_L[train_cols] if construct_df_B_L is not None and train_cols else None
-    construct_df_B_U_train = construct_df_B_U[train_cols] if construct_df_B_U is not None and train_cols else None
+    construct_df_B_U_gen = construct_df_B_U[train_cols] if construct_df_B_U is not None and train_cols else None
 
     # 打印日志信息
     print("=== Logs ===")
@@ -969,8 +969,8 @@ def process_dataframes(df_A, construct_df_B, unlabeled_row_indices, gen_cols):
     print(f"y_L_dict keys: {list(y_L_dict.keys())}")
     print(f"y_U_dict keys: {list(y_U_dict.keys())}")
     print(f"construct_df_B_L_train: {construct_df_B_L_train.shape if construct_df_B_L_train is not None else 'None'}")
-    print(f"construct_df_B_U_train: {construct_df_B_U_train.shape if construct_df_B_U_train is not None else 'None'}")
+    print(f"construct_df_B_U_gen: {construct_df_B_U_gen.shape if construct_df_B_U_gen is not None else 'None'}")
     print("=== End of Logs ===\n")
 
     # 返回结果
-    return df_A_L, df_A_U, construct_df_B_L, construct_df_B_U, y_L_dict, y_U_dict, construct_df_B_L_train, construct_df_B_U_train
+    return df_A_L, df_A_U, construct_df_B_L, construct_df_B_U, y_L_dict, y_U_dict, construct_df_B_L_train, construct_df_B_U_gen

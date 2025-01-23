@@ -1,5 +1,4 @@
 import numpy as np
-from libsvm.svmutil import *
 
 
 def softmax(tp):
@@ -19,25 +18,25 @@ def gen_batches(data_num, batch_size):
     return res
 
 
-def load_data(file_name):
-    if file_name == 'adult':
-        Y_train, X_train = svm_read_problem("./data/adult/a8a")
-        for idx, y in enumerate(Y_train):
-            if y < 0:
-                Y_train[idx] = 0
-            else:
-                Y_train[idx] = 1
-        X_train_array = np.array(to_array(X_train))
-        Y_test, X_test = svm_read_problem("./data/adult/a8a.t")
-        for idx, y in enumerate(Y_test):
-            if y < 0:
-                Y_test[idx] = 0
-            else:
-                Y_test[idx] = 1
-        X_test_array = np.array(to_array(X_test))
-        return X_train_array, Y_train, X_test_array, Y_test
-    else:
-        raise Exception('this dataset is not supported yet')
+# def load_data(file_name):
+#     if file_name == 'adult':
+#         Y_train, X_train = svm_read_problem("./data/adult/a8a")
+#         for idx, y in enumerate(Y_train):
+#             if y < 0:
+#                 Y_train[idx] = 0
+#             else:
+#                 Y_train[idx] = 1
+#         X_train_array = np.array(to_array(X_train))
+#         Y_test, X_test = svm_read_problem("./data/adult/a8a.t")
+#         for idx, y in enumerate(Y_test):
+#             if y < 0:
+#                 Y_test[idx] = 0
+#             else:
+#                 Y_test[idx] = 1
+#         X_test_array = np.array(to_array(X_test))
+#         return X_train_array, Y_train, X_test_array, Y_test
+#     else:
+#         raise Exception('this dataset is not supported yet')
 
 
 def split_data(X_train, X_test, client_num):
