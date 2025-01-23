@@ -9,6 +9,7 @@ from consts.Constants import CONFIGS_PATH
 import random
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from math import sqrt
 
 def subtract_random_from_method(df: pd.DataFrame, methodName, a: float, b: float) -> pd.DataFrame:
     """
@@ -903,21 +904,6 @@ def evaluate_imputed_data(original_data, imputed_data):
     plt.imshow(imputed_data, cmap='viridis', aspect='auto')
     plt.title("Imputed Data")
     plt.colorbar()
-
-    plt.tight_layout()
-    plt.show()
-
-    # 6. 如果想看各个列的差值分布，也可以再加一个可视化（示例）
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5 * ncols, 4 * nrows))
-    axes = axes.flatten() if num_plots > 1 else [axes]
-
-    for i, col in enumerate(numeric_cols):
-        ax = axes[i]
-        diff = original_df[col] - imputed_df[col]
-        ax.hist(diff, bins=30, alpha=0.7, color='steelblue')
-        ax.set_title(f"{col} 差值分布 (original - imputed)")
-        ax.set_xlabel("Difference")
-        ax.set_ylabel("Frequency")
 
     plt.tight_layout()
     plt.show()
