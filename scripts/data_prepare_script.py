@@ -15,6 +15,11 @@ data_prepare_script.py
 作者：lvjiuluan
 日期：2025年2月9日
 """
+import sys
+sys.path.append('D:\PyCharmProjects\VFPUMC02')
+sys.path.append(r'C:\Users\Administrator\PycharmProjects\VFPUMC02')
+sys.path.append(r'/root/VFPUMC02')
+
 
 from consts.Constants import DATASETS_PATH
 from utils.DatasetsPrepareUtils import download_bank_marketing_dataset
