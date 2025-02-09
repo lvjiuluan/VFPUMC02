@@ -1,5 +1,6 @@
 # AUTO DL
 source /etc/network_turbo
+unset http_proxy && unset https_proxy
 
 # FATE requires Python >= 3.10
 conda create -n fate_env python=3.10
@@ -12,7 +13,6 @@ pip install -r requirements.txt
 pip install pyfate==2.2.0
 pip install matplotlib
 pip install ctgan
-pip install kagglehub
 
 # 安装 ipykernel
 conda install -c anaconda ipykernel

@@ -31,9 +31,9 @@ from consts.Constants import DATASETS_PATH
 from utils.DatasetsPrepareUtils import download_file
 
 # 下载原始csv文件
-download_file('https://github.com/lvjiuluan/DataSets/blob/main/bank_orig.csv', DATASETS_PATH, 'bank_orig.csv')
-download_file('https://github.com/lvjiuluan/DataSets/blob/main/census_orig.csv', DATASETS_PATH, 'census_orig.csv')
-download_file('https://github.com/lvjiuluan/DataSets/blob/main/credit_orig.csv', DATASETS_PATH, 'credit_orig.csv')
+download_file('https://raw.githubusercontent.com/lvjiuluan/DataSets/refs/heads/main/bank_orig.csv', DATASETS_PATH, 'bank_orig.csv')
+download_file('https://raw.githubusercontent.com/lvjiuluan/DataSets/refs/heads/main/census_orig.csv', DATASETS_PATH, 'census_orig.csv')
+download_file('https://raw.githubusercontent.com/lvjiuluan/DataSets/refs/heads/main/credit_orig.csv', DATASETS_PATH, 'credit_orig.csv')
 
 # bank
 category_columns = ['job', 'marital', 'education', 'default', 'housing', 'loan', 'contact', 'month', 'day_of_week',
