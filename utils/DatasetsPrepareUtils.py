@@ -74,7 +74,7 @@ def download_bank_marketing_dataset():
     os.makedirs(DATASETS_PATH, exist_ok=True)
 
     # 目标存储路径
-    target_path = os.path.join(DATASETS_PATH, 'bank.csv')
+    target_path = os.path.join(DATASETS_PATH, 'bank_orig.csv')
 
     # 移动文件到 DATASETS_PATH 目录下
     if os.path.exists(file_path):

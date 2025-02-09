@@ -5,3 +5,4 @@ scikit-learn
 pyyaml
 numpy
 pyfate==2.2.0
+kagglehub
