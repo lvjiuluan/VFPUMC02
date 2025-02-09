@@ -12,6 +12,11 @@ data_prepare_script.py
 使用方法：
 在安装了必要库（pandas, numpy, sklearn, wget）的Python环境中运行此脚本。
 
+
+_orig (最原始的版本，刚下载)
+
+_clean(经预处理，包括缺失值处理、编码，归一化等)
+
 作者：lvjiuluan
 日期：2025年2月9日
 """
