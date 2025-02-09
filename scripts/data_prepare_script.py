@@ -1,5 +1,5 @@
 """
-data_prepare.py
+data_prepare_script.py
 
 该脚本旨在自动化下载和预处理数据集的过程。
 脚本执行以下任务：
