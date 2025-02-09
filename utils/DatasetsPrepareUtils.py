@@ -69,4 +69,11 @@ def download_file(download_url: str, path: str, filename: str = None):
         return None  # 失败返回 None
 
 
-
+def reorder_columns(df, new_columns):
+    # 检查new_columns是否包含所有的列
+    if set(new_columns) == set(df.columns):
+        # 按照new_columns的顺序重新排列列
+        df = df[new_columns]
+        return df
+    else:
+        raise ValueError("new_columns必须包含df的所有列")
